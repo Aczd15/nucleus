@@ -73,6 +73,7 @@ php -S 0.0.0.0:8080 router.php
 ## Основные URL
 - без rewrite: `/index.php?r=/` , `/index.php?r=/catalog` и т.д.
 - с rewrite: `/`, `/catalog`, `/cart`, `/admin`
+- доп. страницы: `/about`, `/delivery-payment`
 
 ## Безопасность
 - CSRF-защита для POST-форм.

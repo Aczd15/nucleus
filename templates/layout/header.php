@@ -11,6 +11,8 @@
     <a class="logo" href="<?= htmlspecialchars(url('/')) ?>">Nucleus</a>
     <nav>
         <a href="<?= htmlspecialchars(url('/catalog')) ?>">Каталог</a>
+        <a href="<?= htmlspecialchars(url('/about')) ?>">О компании</a>
+        <a href="<?= htmlspecialchars(url('/delivery-payment')) ?>">Доставка/Оплата</a>
         <a href="<?= htmlspecialchars(url('/cart')) ?>">Корзина</a>
         <?php if (current_user()): ?>
             <?php if (is_admin()): ?><a href="<?= htmlspecialchars(url('/admin')) ?>">Админ</a><?php endif; ?>

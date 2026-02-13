@@ -38,6 +38,15 @@ switch ($path) {
         render('home/index', compact('news', 'phones'));
         break;
 
+
+    case '/about':
+        render('home/about');
+        break;
+
+    case '/delivery-payment':
+        render('home/delivery');
+        break;
+
     case '/register':
         if ($method === 'GET') {
             $a = random_int(2, 9);
