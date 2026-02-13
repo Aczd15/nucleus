@@ -14,9 +14,6 @@ spl_autoload_register(static function (string $class): void {
     }
 });
 
-use App\Database;
-
-$db = Database::connect($config['db']);
 
 function render(string $view, array $data = []): void
 {
