@@ -7,20 +7,21 @@
     <link rel="stylesheet" href="<?= htmlspecialchars(asset_url('style.css')) ?>">
 </head>
 <body>
-<header class="site-header">
+<div class="bg-aurora"></div>
+<header class="site-header glass">
     <a class="logo" href="<?= htmlspecialchars(url('/')) ?>">Nucleus</a>
-    <nav>
-        <a href="<?= htmlspecialchars(url('/catalog')) ?>">Каталог</a>
-        <a href="<?= htmlspecialchars(url('/about')) ?>">О компании</a>
-        <a href="<?= htmlspecialchars(url('/delivery-payment')) ?>">Доставка/Оплата</a>
-        <a href="<?= htmlspecialchars(url('/cart')) ?>">Корзина</a>
+    <nav class="nav-menu">
+        <a class="nav-link" href="<?= htmlspecialchars(url('/catalog')) ?>">Каталог</a>
+        <a class="nav-link" href="<?= htmlspecialchars(url('/about')) ?>">О компании</a>
+        <a class="nav-link" href="<?= htmlspecialchars(url('/delivery-payment')) ?>">Доставка/Оплата</a>
+        <a class="nav-link" href="<?= htmlspecialchars(url('/cart')) ?>">Корзина</a>
         <?php if (current_user()): ?>
-            <?php if (is_admin()): ?><a href="<?= htmlspecialchars(url('/admin')) ?>">Админ</a><?php endif; ?>
+            <?php if (is_admin()): ?><a class="nav-link" href="<?= htmlspecialchars(url('/admin')) ?>">Админ</a><?php endif; ?>
             <span class="muted">Привет, <?= htmlspecialchars(current_user()['name']) ?></span>
-            <a href="<?= htmlspecialchars(url('/logout')) ?>">Выйти</a>
+            <a class="nav-link nav-link-accent" href="<?= htmlspecialchars(url('/logout')) ?>">Выйти</a>
         <?php else: ?>
-            <a href="<?= htmlspecialchars(url('/login')) ?>">Войти</a>
-            <a href="<?= htmlspecialchars(url('/register')) ?>">Регистрация</a>
+            <a class="nav-link" href="<?= htmlspecialchars(url('/login')) ?>">Войти</a>
+            <a class="nav-link nav-link-accent" href="<?= htmlspecialchars(url('/register')) ?>">Регистрация</a>
         <?php endif; ?>
     </nav>
 </header>
