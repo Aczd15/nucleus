@@ -48,8 +48,12 @@ php scripts/init_db.php
 1. Если проект лежит в `htdocs/nucleus`, откройте:
    - `http://localhost/nucleus/index.php`
 2. В `config/config.php` установите:
-   - `base_url` => `/nucleus`
+   - `base_url` => `/nucleus` (или оставьте пустым для автоопределения)
    - `use_rewrite` => `false` (по умолчанию)
+
+> Важно: если `base_url` оставить пустым, приложение автоматически определит путь (например `/nucleus`).
+> Это также нужно для корректной загрузки CSS/JS в XAMPP.
+
 3. В этом режиме ссылки работают как:
    - `/nucleus/index.php?r=/catalog`
 4. Если хотите красивые URL (`/catalog`), включите rewrite:

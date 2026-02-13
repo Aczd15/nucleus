@@ -30,7 +30,19 @@ function render(string $view, array $data = []): void
 function app_base_url(): string
 {
     global $config;
-    return rtrim((string) ($config['app']['base_url'] ?? ''), '/');
+
+    $configured = rtrim((string) ($config['app']['base_url'] ?? ''), '/');
+    if ($configured !== '') {
+        return $configured;
+    }
+
+    $scriptName = (string) ($_SERVER['SCRIPT_NAME'] ?? '');
+    $dir = str_replace('\\', '/', dirname($scriptName));
+    if ($dir === '/' || $dir === '.') {
+        return '';
+    }
+
+    return rtrim($dir, '/');
 }
 
 function use_rewrite(): bool
@@ -58,6 +70,18 @@ function url(string $path = '/'): string
     }
 
     return $entry . '?r=' . rawurlencode($normalized);
+}
+
+function asset_url(string $path): string
+{
+    $base = app_base_url();
+    $normalized = ltrim($path, '/');
+
+    if (use_rewrite()) {
+        return $base . '/assets/' . $normalized;
+    }
+
+    return $base . '/public/assets/' . $normalized;
 }
 
 function redirect(string $path): never
