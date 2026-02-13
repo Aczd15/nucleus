@@ -83,10 +83,15 @@ function asset_url(string $path): string
     $base = app_base_url();
     $normalized = ltrim($path, '/');
 
-    if (use_rewrite()) {
+    $scriptFilename = str_replace('\\', '/', (string) ($_SERVER['SCRIPT_FILENAME'] ?? ''));
+    $scriptDir = basename(dirname($scriptFilename));
+
+    // If app runs with DocumentRoot=/public -> assets are served from /assets/*
+    if ($scriptDir === 'public') {
         return $base . '/assets/' . $normalized;
     }
 
+    // If app runs from repo root/index.php proxy (typical XAMPP htdocs/nucleus)
     return $base . '/public/assets/' . $normalized;
 }
 
