@@ -78,3 +78,8 @@ button {
 .inline button, .inline select { width: auto; }
 .footer { text-align: center; color: var(--muted); padding: 2rem 1rem; }
 .muted { color: var(--muted); }
+
+.captcha-box {
+  background:#eef2ff; border:1px dashed #818cf8; border-radius:12px; padding:.8rem; margin: .8rem 0 1rem;
+}
+.captcha-box strong { display:block; margin:.35rem 0 .5rem; font-size:1.1rem; }

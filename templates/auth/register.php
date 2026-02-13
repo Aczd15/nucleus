@@ -6,11 +6,21 @@
 
     <form method="post" action="<?= htmlspecialchars(url('/register')) ?>">
         <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token()) ?>">
-        <label>Имя
-            <input type="text" name="name" required minlength="2">
+
+        <label>Имя и фамилия
+            <input type="text" name="name" required minlength="2" placeholder="Иван Петров">
         </label>
         <label>Email
-            <input type="email" name="email" required>
+            <input type="email" name="email" required placeholder="you@example.com">
+        </label>
+        <label>Телефон
+            <input type="text" name="phone" placeholder="+7 (999) 123-45-67">
+        </label>
+        <label>Город
+            <input type="text" name="city" placeholder="Москва">
+        </label>
+        <label>Дата рождения
+            <input type="date" name="birth_date">
         </label>
         <label>Пароль
             <input type="password" name="password" required minlength="8">
@@ -18,9 +28,13 @@
         <label>Подтвердите пароль
             <input type="password" name="confirm_password" required minlength="8">
         </label>
-        <label>Капча: введите число <?= (int) ($_SESSION['captcha_answer'] ?? 0) ?>
-            <input type="number" name="captcha" required>
-        </label>
+
+        <div class="captcha-box">
+            <small>Проверка, что вы не робот:</small>
+            <strong><?= htmlspecialchars($_SESSION['captcha_label'] ?? 'Сколько будет 2 + 2?') ?></strong>
+            <input type="number" name="captcha" required placeholder="Введите ответ">
+        </div>
+
         <button type="submit">Создать аккаунт</button>
     </form>
 </section>

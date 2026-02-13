@@ -25,9 +25,9 @@ switch ($path) {
     case '/':
     case '/index.php':
         $news = [
-            ['title' => 'Nucleus AI Line', 'text' => 'Новая серия смартфонов с улучшенной автономностью и AI-камерой.'],
-            ['title' => 'Доставка за 24 часа', 'text' => 'Расширили логистику — теперь быстрее доставляем по всей стране.'],
-            ['title' => 'Trade-in программа', 'text' => 'Обменивайте старые устройства на выгодных условиях.'],
+            ['title' => 'Новая поставка iPhone 16 Pro Max', 'text' => 'В наличии все актуальные цвета и объемы памяти.'],
+            ['title' => 'Бесплатная настройка устройства', 'text' => 'Перенесем данные и установим нужные приложения при покупке.'],
+            ['title' => 'Расширенная гарантия Nucleus Care', 'text' => 'Дополнительная защита экрана и корпуса до 24 месяцев.'],
         ];
         $phones = db()->query('SELECT * FROM phones ORDER BY created_at DESC LIMIT 6')->fetchAll();
         render('home/index', compact('news', 'phones'));
@@ -35,7 +35,10 @@ switch ($path) {
 
     case '/register':
         if ($method === 'GET') {
-            $_SESSION['captcha_answer'] = random_int(10, 99);
+            $a = random_int(2, 9);
+            $b = random_int(1, 9);
+            $_SESSION['captcha_answer'] = $a + $b;
+            $_SESSION['captcha_label'] = "Сколько будет {$a} + {$b}?";
             render('auth/register', ['errors' => []]);
             break;
         }
@@ -47,6 +50,9 @@ switch ($path) {
 
         $name = trim($_POST['name'] ?? '');
         $email = trim($_POST['email'] ?? '');
+        $phone = trim($_POST['phone'] ?? '');
+        $city = trim($_POST['city'] ?? '');
+        $birthDate = trim($_POST['birth_date'] ?? '');
         $password = $_POST['password'] ?? '';
         $confirm = $_POST['confirm_password'] ?? '';
         $captcha = (int) ($_POST['captcha'] ?? 0);
@@ -54,6 +60,8 @@ switch ($path) {
 
         if (mb_strlen($name) < 2) $errors[] = 'Имя должно быть от 2 символов.';
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) $errors[] = 'Некорректный email.';
+        if ($phone !== '' && !preg_match('/^[0-9+\-()\s]{7,20}$/', $phone)) $errors[] = 'Некорректный номер телефона.';
+        if ($birthDate !== '' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $birthDate)) $errors[] = 'Дата рождения должна быть в формате YYYY-MM-DD.';
         if (strlen($password) < 8) $errors[] = 'Пароль минимум 8 символов.';
         if ($password !== $confirm) $errors[] = 'Пароли не совпадают.';
         if ($captcha !== (int) ($_SESSION['captcha_answer'] ?? -1)) $errors[] = 'Неверная капча.';
@@ -63,15 +71,21 @@ switch ($path) {
         if ($exists->fetch()) $errors[] = 'Пользователь уже существует.';
 
         if ($errors) {
-            $_SESSION['captcha_answer'] = random_int(10, 99);
+            $a = random_int(2, 9);
+            $b = random_int(1, 9);
+            $_SESSION['captcha_answer'] = $a + $b;
+            $_SESSION['captcha_label'] = "Сколько будет {$a} + {$b}?";
             render('auth/register', compact('errors'));
             break;
         }
 
-        $stmt = db()->prepare('INSERT INTO users (name, email, password_hash, role) VALUES (:name,:email,:password_hash,:role)');
+        $stmt = db()->prepare('INSERT INTO users (name, email, phone, city, birth_date, password_hash, role) VALUES (:name,:email,:phone,:city,:birth_date,:password_hash,:role)');
         $stmt->execute([
             'name' => $name,
             'email' => $email,
+            'phone' => $phone !== '' ? $phone : null,
+            'city' => $city !== '' ? $city : null,
+            'birth_date' => $birthDate !== '' ? $birthDate : null,
             'password_hash' => Auth::hashPassword($password, $config['app']['password_pepper']),
             'role' => 'user',
         ]);
@@ -125,6 +139,21 @@ switch ($path) {
     case '/catalog':
         $phones = db()->query('SELECT * FROM phones ORDER BY created_at DESC')->fetchAll();
         render('catalog/index', compact('phones'));
+        break;
+
+    case '/product':
+        $id = (int) ($_GET['id'] ?? 0);
+        $stmt = db()->prepare('SELECT * FROM phones WHERE id = :id');
+        $stmt->execute(['id' => $id]);
+        $phone = $stmt->fetch();
+
+        if (!$phone) {
+            http_response_code(404);
+            render('home/404');
+            break;
+        }
+
+        render('catalog/show', compact('phone'));
         break;
 
     case '/cart':
@@ -201,16 +230,17 @@ switch ($path) {
             $id = (int) ($_POST['id'] ?? 0);
             $name = trim($_POST['name'] ?? '');
             $description = trim($_POST['description'] ?? '');
+            $specs = trim($_POST['specs'] ?? '');
             $price = (float) ($_POST['price'] ?? 0);
             $image = trim($_POST['image'] ?? '');
 
             if ($id > 0) {
-                $stmt = db()->prepare('UPDATE phones SET name=:name, description=:description, price=:price, image=:image WHERE id=:id');
-                $stmt->execute(compact('id', 'name', 'description', 'price', 'image'));
+                $stmt = db()->prepare('UPDATE phones SET name=:name, description=:description, specs=:specs, price=:price, image=:image WHERE id=:id');
+                $stmt->execute(compact('id', 'name', 'description', 'specs', 'price', 'image'));
                 flash('success', 'Телефон обновлен.');
             } else {
-                $stmt = db()->prepare('INSERT INTO phones (name, description, price, image) VALUES (:name, :description, :price, :image)');
-                $stmt->execute(compact('name', 'description', 'price', 'image'));
+                $stmt = db()->prepare('INSERT INTO phones (name, description, specs, price, image) VALUES (:name, :description, :specs, :price, :image)');
+                $stmt->execute(compact('name', 'description', 'specs', 'price', 'image'));
                 flash('success', 'Телефон добавлен.');
             }
 
@@ -261,7 +291,7 @@ switch ($path) {
             redirect('/admin/users');
         }
 
-        $users = db()->query('SELECT id, name, email, role, created_at FROM users ORDER BY created_at DESC')->fetchAll();
+        $users = db()->query('SELECT id, name, email, phone, city, birth_date, role, created_at FROM users ORDER BY created_at DESC')->fetchAll();
         render('admin/users', compact('users'));
         break;
 
