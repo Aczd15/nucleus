@@ -7,6 +7,7 @@ return [
     ],
     'app' => [
         'name' => 'Nucleus',
+        // e.g. '/nucleus' when project is served from http://localhost/nucleus
         'base_url' => '',
         'password_pepper' => 'change-this-super-secret-pepper',
     ],

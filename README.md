@@ -41,6 +41,15 @@ php scripts/init_db.php
 3. Выберите файл `sql/schema.sql`.
 4. Нажмите **Go**.
 
+
+### Apache (XAMPP/OpenServer) — если видите "Not Found"
+1. Убедитесь, что включен `mod_rewrite`.
+2. Разрешите `.htaccess` для папки проекта (`AllowOverride All`).
+3. В проекте уже добавлены `.htaccess` (в корне и в `public/`) для маршрутизации.
+4. Если проект открыт в подпапке, например `http://localhost/nucleus`, укажите базовый путь в `config/config.php`:
+   - `base_url` => `/nucleus`
+5. Перезапустите Apache после изменения конфигурации.
+
 ### 4) Создайте администратора
 ```bash
 php scripts/create_admin.php "Admin" "admin@nucleus.local" "StrongPass123"

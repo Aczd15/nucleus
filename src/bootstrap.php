@@ -27,9 +27,27 @@ function render(string $view, array $data = []): void
     require __DIR__ . '/../templates/layout/footer.php';
 }
 
+function app_base_url(): string
+{
+    global $config;
+    return rtrim((string) ($config['app']['base_url'] ?? ''), '/');
+}
+
+function url(string $path = '/'): string
+{
+    $base = app_base_url();
+    $normalized = '/' . ltrim($path, '/');
+
+    if ($normalized === '//') {
+        $normalized = '/';
+    }
+
+    return $base . $normalized;
+}
+
 function redirect(string $path): never
 {
-    header('Location: ' . $path);
+    header('Location: ' . url($path));
     exit;
 }
 

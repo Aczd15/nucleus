@@ -1,0 +1,6 @@
+RewriteEngine On
+
+# Public front-controller routing (when DocumentRoot points to /public)
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ index.php [L]

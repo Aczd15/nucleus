@@ -8,7 +8,7 @@
                 <p><?= htmlspecialchars($phone['description']) ?></p>
                 <div class="row">
                     <strong><?= number_format((float)$phone['price'], 0, '.', ' ') ?> ₽</strong>
-                    <form method="post" action="/cart/add">
+                    <form method="post" action="<?= htmlspecialchars(url('/cart/add')) ?>">
                         <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token()) ?>">
                         <input type="hidden" name="phone_id" value="<?= (int) $phone['id'] ?>">
                         <button type="submit">В корзину</button>

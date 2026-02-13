@@ -29,7 +29,7 @@
                         <input type="text" name="image" value="<?= htmlspecialchars($phone['image']) ?>">
                         <button type="submit">Сохранить</button>
                     </form>
-                    <a href="/admin/phones?delete=<?= (int) $phone['id'] ?>" onclick="return confirm('Удалить?')">Удалить</a>
+                    <a href="<?= htmlspecialchars(url('/admin/phones')) ?>?delete=<?= (int) $phone['id'] ?>" onclick="return confirm('Удалить?')">Удалить</a>
                 </td>
             </tr>
         <?php endforeach; ?>

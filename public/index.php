@@ -2,7 +2,16 @@
 
 require __DIR__ . '/../src/bootstrap.php';
 
-$path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH) ?? '/';
+$requestPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH) ?? '/';
+$baseUrl = app_base_url();
+
+if ($baseUrl !== '' && str_starts_with($requestPath, $baseUrl)) {
+    $path = substr($requestPath, strlen($baseUrl));
+    $path = $path === '' ? '/' : $path;
+} else {
+    $path = $requestPath;
+}
+
 $method = $_SERVER['REQUEST_METHOD'];
 
 use App\Auth;

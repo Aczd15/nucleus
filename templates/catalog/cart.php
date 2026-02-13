@@ -1,9 +1,9 @@
 <section>
     <h1>Корзина</h1>
     <?php if (!$cartItems): ?>
-        <p>Корзина пуста. Добавьте товары из <a href="/catalog">каталога</a>.</p>
+        <p>Корзина пуста. Добавьте товары из <a href="<?= htmlspecialchars(url('/catalog')) ?>">каталога</a>.</p>
     <?php else: ?>
-        <form method="post" action="/cart/update">
+        <form method="post" action="<?= htmlspecialchars(url('/cart/update')) ?>">
             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token()) ?>">
             <table class="table">
                 <thead><tr><th>Товар</th><th>Цена</th><th>Количество</th><th>Сумма</th></tr></thead>
