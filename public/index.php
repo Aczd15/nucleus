@@ -58,8 +58,49 @@ switch ($path) {
         break;
 
     case '/compare-lab':
-        $compare = db()->query('SELECT id, name, specs, price, image FROM phones ORDER BY created_at DESC LIMIT 3')->fetchAll();
-        render('home/compare', compact('compare'));
+        $allPhones = db()->query('SELECT id, name, specs, price, image FROM phones ORDER BY created_at DESC')->fetchAll();
+
+        $selectedIds = array_values(array_unique(array_map('intval', (array) ($_GET['ids'] ?? []))));
+        $selectedIds = array_values(array_filter($selectedIds, static fn (int $id): bool => $id > 0));
+
+        if (!$selectedIds && count($allPhones) >= 2) {
+            $selectedIds = [(int) $allPhones[0]['id'], (int) $allPhones[1]['id']];
+        }
+
+        $phonesById = [];
+        foreach ($allPhones as $phone) {
+            $phonesById[(int) $phone['id']] = $phone;
+        }
+
+        $comparePhones = [];
+        foreach ($selectedIds as $id) {
+            if (isset($phonesById[$id])) {
+                $comparePhones[] = $phonesById[$id];
+            }
+        }
+
+        $specLabels = [];
+        $specMatrix = [];
+        foreach ($comparePhones as $phone) {
+            $phoneId = (int) $phone['id'];
+            $specText = (string) ($phone['specs'] ?? '');
+            foreach (array_filter(array_map('trim', explode('|', $specText))) as $chunk) {
+                if (str_contains($chunk, ':')) {
+                    [$label, $value] = array_map('trim', explode(':', $chunk, 2));
+                } else {
+                    $label = 'Прочее';
+                    $value = $chunk;
+                }
+                if ($label === '') {
+                    $label = 'Прочее';
+                }
+                $specLabels[$label] = true;
+                $specMatrix[$label][$phoneId] = $value;
+            }
+        }
+
+        $specLabels = array_keys($specLabels);
+        render('home/compare', compact('allPhones', 'comparePhones', 'selectedIds', 'specLabels', 'specMatrix'));
         break;
 
     case '/register':

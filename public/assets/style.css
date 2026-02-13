@@ -247,3 +247,21 @@ button {
   from { transform: rotate(0deg) scale(1.2); }
   to { transform: rotate(360deg) scale(1.2); }
 }
+
+
+.compare-form {
+  display: grid;
+  gap: .75rem;
+  max-width: 620px;
+}
+
+.compare-form select {
+  min-height: 180px;
+  background: #fff;
+}
+
+.compare-table th {
+  background: #f8faff;
+  position: sticky;
+  top: 0;
+}
