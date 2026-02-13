@@ -10,11 +10,15 @@
                     <strong><?= number_format((float)$phone['price'], 0, '.', ' ') ?> ₽</strong>
                     <a href="<?= htmlspecialchars(url_with_query('/product', ['id' => (int) $phone['id']])) ?>">Характеристики</a>
                 </div>
-                <form method="post" action="<?= htmlspecialchars(url('/cart/add')) ?>" style="margin-top:.7rem;">
-                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token()) ?>">
-                    <input type="hidden" name="phone_id" value="<?= (int) $phone['id'] ?>">
-                    <button type="submit">В корзину</button>
-                </form>
+                <?php if (current_user()): ?>
+                    <form method="post" action="<?= htmlspecialchars(url('/cart/add')) ?>" style="margin-top:.7rem;">
+                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token()) ?>">
+                        <input type="hidden" name="phone_id" value="<?= (int) $phone['id'] ?>">
+                        <button type="submit">В корзину</button>
+                    </form>
+                <?php else: ?>
+                    <a class="nav-link" href="<?= htmlspecialchars(url('/login')) ?>" style="margin-top:.7rem;">Войдите, чтобы добавить в корзину</a>
+                <?php endif; ?>
             </article>
         <?php endforeach; ?>
     </div>

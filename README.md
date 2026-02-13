@@ -138,3 +138,5 @@ ALTER TABLE users ADD COLUMN birth_date DATE DEFAULT NULL;
 ```bash
 php scripts/init_db.php
 ```
+
+- Добавление в корзину доступно только авторизованным пользователям.

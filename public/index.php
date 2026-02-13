@@ -191,6 +191,11 @@ switch ($path) {
             redirect('/catalog');
         }
 
+        if (!current_user()) {
+            flash('error', 'Для добавления товара в корзину нужно войти в аккаунт.');
+            redirect('/login');
+        }
+
         $id = (int) ($_POST['phone_id'] ?? 0);
         $stmt = db()->prepare('SELECT id, name, price FROM phones WHERE id = :id');
         $stmt->execute(['id' => $id]);
