@@ -23,6 +23,26 @@ CREATE TABLE IF NOT EXISTS phones (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS orders (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    total_amount DECIMAL(10,2) NOT NULL,
+    status VARCHAR(50) NOT NULL DEFAULT 'new',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX (user_id)
+);
+
+CREATE TABLE IF NOT EXISTS order_items (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    order_id INT NOT NULL,
+    phone_id INT NOT NULL,
+    product_name VARCHAR(180) NOT NULL,
+    unit_price DECIMAL(10,2) NOT NULL,
+    qty INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX (order_id)
+);
+
 INSERT INTO phones (name, description, specs, price, image) VALUES
 ('iPhone 16 Pro Max', 'Флагман Apple с большим дисплеем и топовой производительностью.', 'Экран: 6.9\" OLED | Чип: A18 Pro | Камера: 48+12+12 МП | Память: 256 ГБ | Батарея: 4676 мАч', 189990, 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?auto=format&fit=crop&w=900&q=80'),
 ('Samsung Galaxy S24 Ultra', 'Премиальный Android-смартфон с S Pen и продвинутой камерой.', 'Экран: 6.8\" AMOLED | Чип: Snapdragon 8 Gen 3 | Камера: 200+50+12+10 МП | Память: 256 ГБ | Батарея: 5000 мАч', 149990, 'https://images.unsplash.com/photo-1610792516307-ea5acd9c3b00?auto=format&fit=crop&w=900&q=80'),

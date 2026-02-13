@@ -216,6 +216,59 @@ switch ($path) {
         flash('success', 'Вы вышли из аккаунта.');
         redirect('/');
 
+    case '/profile':
+        if (!current_user()) {
+            flash('error', 'Сначала войдите в аккаунт.');
+            redirect('/login');
+        }
+
+        $userId = (int) current_user()['id'];
+
+        if ($method === 'POST') {
+            if (!verify_csrf()) {
+                flash('error', 'Невалидный CSRF токен.');
+                redirect('/profile');
+            }
+
+            $name = trim($_POST['name'] ?? '');
+            $phone = trim($_POST['phone'] ?? '');
+            $city = trim($_POST['city'] ?? '');
+            $birthDate = trim($_POST['birth_date'] ?? '');
+
+            if ($name === '' || mb_strlen($name) < 2) {
+                flash('error', 'Имя должно быть не короче 2 символов.');
+                redirect('/profile');
+            }
+
+            if ($hasUserPhone && $hasUserCity && $hasUserBirthDate) {
+                $stmt = db()->prepare('UPDATE users SET name=:name, phone=:phone, city=:city, birth_date=:birth_date WHERE id=:id');
+                $stmt->execute([
+                    'id' => $userId,
+                    'name' => $name,
+                    'phone' => $phone !== '' ? $phone : null,
+                    'city' => $city !== '' ? $city : null,
+                    'birth_date' => $birthDate !== '' ? $birthDate : null,
+                ]);
+            } else {
+                $stmt = db()->prepare('UPDATE users SET name=:name WHERE id=:id');
+                $stmt->execute(['id' => $userId, 'name' => $name]);
+            }
+
+            $_SESSION['user']['name'] = $name;
+            flash('success', 'Данные профиля обновлены.');
+            redirect('/profile');
+        }
+
+        $select = $hasUserPhone && $hasUserCity && $hasUserBirthDate
+            ? 'SELECT id,name,email,phone,city,birth_date,created_at FROM users WHERE id=:id'
+            : 'SELECT id,name,email,created_at FROM users WHERE id=:id';
+
+        $stmt = db()->prepare($select);
+        $stmt->execute(['id' => $userId]);
+        $profile = $stmt->fetch();
+        render('profile/index', compact('profile'));
+        break;
+
     case '/catalog':
         $phones = db()->query('SELECT * FROM phones ORDER BY created_at DESC')->fetchAll();
         render('catalog/index', compact('phones'));
@@ -288,6 +341,85 @@ switch ($path) {
 
         flash('success', 'Корзина обновлена.');
         redirect('/cart');
+
+    case '/order/checkout':
+        if (!current_user()) {
+            flash('error', 'Сначала войдите в аккаунт.');
+            redirect('/login');
+        }
+
+        if ($method !== 'POST' || !verify_csrf()) {
+            flash('error', 'Невалидный запрос.');
+            redirect('/cart');
+        }
+
+        $cartItems = $_SESSION['cart'] ?? [];
+        if (!$cartItems) {
+            flash('error', 'Корзина пуста.');
+            redirect('/cart');
+        }
+
+        ensure_orders_tables();
+
+        $total = 0;
+        foreach ($cartItems as $item) {
+            $total += ((float) $item['price']) * ((int) $item['qty']);
+        }
+
+        $pdo = db();
+        $pdo->beginTransaction();
+        try {
+            $stmt = $pdo->prepare('INSERT INTO orders (user_id, total_amount, status) VALUES (:user_id, :total_amount, :status)');
+            $stmt->execute([
+                'user_id' => (int) current_user()['id'],
+                'total_amount' => $total,
+                'status' => 'new',
+            ]);
+
+            $orderId = (int) $pdo->lastInsertId();
+            $itemStmt = $pdo->prepare('INSERT INTO order_items (order_id, phone_id, product_name, unit_price, qty) VALUES (:order_id, :phone_id, :product_name, :unit_price, :qty)');
+            foreach ($cartItems as $item) {
+                $itemStmt->execute([
+                    'order_id' => $orderId,
+                    'phone_id' => (int) $item['id'],
+                    'product_name' => $item['name'],
+                    'unit_price' => (float) $item['price'],
+                    'qty' => (int) $item['qty'],
+                ]);
+            }
+
+            $pdo->commit();
+        } catch (Throwable $e) {
+            $pdo->rollBack();
+            flash('error', 'Не удалось оформить заказ: ' . $e->getMessage());
+            redirect('/cart');
+        }
+
+        unset($_SESSION['cart']);
+        flash('success', 'Заказ успешно оформлен.');
+        redirect('/orders');
+
+    case '/orders':
+        if (!current_user()) {
+            flash('error', 'Сначала войдите в аккаунт.');
+            redirect('/login');
+        }
+
+        ensure_orders_tables();
+
+        $ordersStmt = db()->prepare('SELECT id, total_amount, status, created_at FROM orders WHERE user_id = :user_id ORDER BY created_at DESC');
+        $ordersStmt->execute(['user_id' => (int) current_user()['id']]);
+        $orders = $ordersStmt->fetchAll();
+
+        $itemsStmt = db()->prepare('SELECT order_id, product_name, unit_price, qty FROM order_items WHERE order_id = :order_id');
+        foreach ($orders as &$order) {
+            $itemsStmt->execute(['order_id' => (int) $order['id']]);
+            $order['items'] = $itemsStmt->fetchAll();
+        }
+        unset($order);
+
+        render('profile/orders', compact('orders'));
+        break;
 
     case '/admin':
         if (!is_admin()) {

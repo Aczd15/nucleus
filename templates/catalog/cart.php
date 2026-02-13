@@ -19,7 +19,14 @@
                 </tbody>
             </table>
             <p><strong>Итого: <?= number_format((float)$total, 0, '.', ' ') ?> ₽</strong></p>
-            <button type="submit">Обновить корзину</button>
+            <div class="row" style="margin-top:.8rem;">
+                <button type="submit">Обновить корзину</button>
+            </div>
+        </form>
+
+        <form method="post" action="<?= htmlspecialchars(url('/order/checkout')) ?>" style="margin-top:1rem; max-width:320px;">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token()) ?>">
+            <button type="submit">Оформить заказ</button>
         </form>
     <?php endif; ?>
 </section>

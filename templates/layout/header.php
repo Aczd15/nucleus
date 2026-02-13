@@ -18,6 +18,8 @@
         <a class="nav-link" href="<?= htmlspecialchars(url('/compare-lab')) ?>">Compare Lab</a>
         <a class="nav-link" href="<?= htmlspecialchars(url('/cart')) ?>">Корзина</a>
         <?php if (current_user()): ?>
+            <a class="nav-link" href="<?= htmlspecialchars(url('/profile')) ?>">Кабинет</a>
+            <a class="nav-link" href="<?= htmlspecialchars(url('/orders')) ?>">Мои заказы</a>
             <?php if (is_admin()): ?><a class="nav-link" href="<?= htmlspecialchars(url('/admin')) ?>">Админ</a><?php endif; ?>
             <span class="muted">Привет, <?= htmlspecialchars(current_user()['name']) ?></span>
             <a class="nav-link nav-link-accent" href="<?= htmlspecialchars(url('/logout')) ?>">Выйти</a>

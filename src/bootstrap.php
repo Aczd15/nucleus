@@ -44,6 +44,29 @@ function db_has_column(string $table, string $column): bool
     return $cache[$key];
 }
 
+function ensure_orders_tables(): void
+{
+    db()->exec('CREATE TABLE IF NOT EXISTS orders (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        total_amount DECIMAL(10,2) NOT NULL,
+        status VARCHAR(50) NOT NULL DEFAULT "new",
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        INDEX (user_id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4');
+
+    db()->exec('CREATE TABLE IF NOT EXISTS order_items (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        order_id INT NOT NULL,
+        phone_id INT NOT NULL,
+        product_name VARCHAR(180) NOT NULL,
+        unit_price DECIMAL(10,2) NOT NULL,
+        qty INT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        INDEX (order_id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4');
+}
+
 function render(string $view, array $data = []): void
 {
     extract($data, EXTR_SKIP);
