@@ -45,6 +45,7 @@ a { color: var(--primary); text-decoration: none; }
   border-radius: 16px;
   padding: 1rem;
   box-shadow: 0 10px 30px rgba(2, 6, 23, 0.04);
+  overflow: hidden;
 }
 .product-image {
   width: 100%;
@@ -66,6 +67,11 @@ a { color: var(--primary); text-decoration: none; }
   min-width: 88px;
   aspect-ratio: 1 / 1;
   border-radius: 10px;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
 }
 
 .form-wrap, .admin-form {
