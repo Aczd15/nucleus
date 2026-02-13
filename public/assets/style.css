@@ -163,13 +163,14 @@ button {
   display: none;
 }
 
-.menu-panel {
+.site-header .menu-panel {
   position: absolute;
   top: calc(100% + .55rem);
   right: 0;
-  width: min(320px, 88vw);
+  width: min(360px, 92vw);
   display: grid;
   gap: .45rem;
+  align-items: stretch;
   padding: .8rem;
   border-radius: 14px;
   border: 1px solid var(--border);
@@ -178,8 +179,11 @@ button {
   z-index: 25;
 }
 
-.menu-panel .nav-link {
+.site-header .menu-panel .nav-link {
+  width: 100%;
   justify-content: flex-start;
+  white-space: normal;
+  overflow: visible;
 }
 
 .menu-user {
