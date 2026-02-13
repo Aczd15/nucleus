@@ -493,6 +493,7 @@ switch ($path) {
         }
 
         ensure_orders_tables();
+        ensure_order_history_table();
 
         $total = 0;
         foreach ($cartItems as $item) {
@@ -521,7 +522,6 @@ switch ($path) {
                 ]);
             }
 
-            ensure_order_history_table();
             $histStmt = $pdo->prepare('INSERT INTO order_status_history (order_id, status, comment) VALUES (:order_id, :status, :comment)');
             $histStmt->execute([
                 'order_id' => $orderId,
@@ -531,7 +531,9 @@ switch ($path) {
 
             $pdo->commit();
         } catch (Throwable $e) {
-            $pdo->rollBack();
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
             flash('error', 'Не удалось оформить заказ: ' . $e->getMessage());
             redirect('/cart');
         }
