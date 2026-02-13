@@ -14,11 +14,12 @@
     </form>
 
     <table class="table">
-        <thead><tr><th>ID</th><th>Название</th><th>Цена</th><th>Действия</th></tr></thead>
+        <thead><tr><th>ID</th><th>Фото</th><th>Название</th><th>Цена</th><th>Действия</th></tr></thead>
         <tbody>
         <?php foreach ($phones as $phone): ?>
             <tr>
                 <td><?= (int) $phone['id'] ?></td>
+                <td><img class="product-image product-image--thumb" src="<?= htmlspecialchars(($phone['image'] ?? '') ?: 'https://placehold.co/640x480?text=Phone') ?>" alt="<?= htmlspecialchars($phone['name']) ?>"></td>
                 <td><?= htmlspecialchars($phone['name']) ?></td>
                 <td><?= number_format((float)$phone['price'], 0, '.', ' ') ?> ₽</td>
                 <td>

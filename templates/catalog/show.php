@@ -1,7 +1,7 @@
 <section>
     <a href="<?= htmlspecialchars(url('/catalog')) ?>">← Назад в каталог</a>
     <article class="card" style="margin-top:1rem;">
-        <img src="<?= htmlspecialchars($phone['image'] ?: 'https://placehold.co/900x520?text=Phone') ?>" alt="<?= htmlspecialchars($phone['name']) ?>" style="height:300px;">
+        <img class="product-image product-image--large" src="<?= htmlspecialchars($phone['image'] ?: 'https://placehold.co/900x675?text=Phone') ?>" alt="<?= htmlspecialchars($phone['name']) ?>">
         <h1><?= htmlspecialchars($phone['name']) ?></h1>
         <p><?= htmlspecialchars($phone['description']) ?></p>
         <h3>Характеристики</h3>

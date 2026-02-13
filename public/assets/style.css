@@ -46,7 +46,28 @@ a { color: var(--primary); text-decoration: none; }
   padding: 1rem;
   box-shadow: 0 10px 30px rgba(2, 6, 23, 0.04);
 }
-.card img { width: 100%; border-radius: 12px; height: 160px; object-fit: cover; }
+.product-image {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: 12px;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+  background: linear-gradient(135deg, #e2e8f0, #cbd5e1);
+}
+
+.product-image--large {
+  max-width: 680px;
+  margin: 0 auto 1rem;
+}
+
+.product-image--thumb {
+  width: 88px;
+  min-width: 88px;
+  aspect-ratio: 1 / 1;
+  border-radius: 10px;
+}
+
 .form-wrap, .admin-form {
   max-width: 520px;
   background: #fff;
