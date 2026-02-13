@@ -20,6 +20,7 @@
         <?php if (current_user()): ?>
             <a class="nav-link" href="<?= htmlspecialchars(url('/profile')) ?>">Кабинет</a>
             <a class="nav-link" href="<?= htmlspecialchars(url('/orders')) ?>">Мои заказы</a>
+            <a class="nav-link" href="<?= htmlspecialchars(url('/wishlist')) ?>">Избранное</a>
             <?php if (is_admin()): ?><a class="nav-link" href="<?= htmlspecialchars(url('/admin')) ?>">Админ</a><?php endif; ?>
             <span class="muted">Привет, <?= htmlspecialchars(current_user()['name']) ?></span>
             <a class="nav-link nav-link-accent" href="<?= htmlspecialchars(url('/logout')) ?>">Выйти</a>

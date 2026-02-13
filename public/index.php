@@ -285,8 +285,69 @@ switch ($path) {
         break;
 
     case '/catalog':
-        $phones = db()->query('SELECT * FROM phones ORDER BY created_at DESC')->fetchAll();
-        render('catalog/index', compact('phones'));
+        $q = trim((string) ($_GET['q'] ?? ''));
+        $minPrice = (float) ($_GET['min_price'] ?? 0);
+        $maxPrice = (float) ($_GET['max_price'] ?? 0);
+        $sort = (string) ($_GET['sort'] ?? 'new');
+        $page = max(1, (int) ($_GET['page'] ?? 1));
+        $perPage = 6;
+
+        $orderBy = match ($sort) {
+            'price_asc' => 'price ASC, id DESC',
+            'price_desc' => 'price DESC, id DESC',
+            'name_asc' => 'name ASC',
+            default => 'created_at DESC',
+        };
+
+        $where = [];
+        $params = [];
+
+        if ($q !== '') {
+            $where[] = '(name LIKE :q OR description LIKE :q)';
+            $params['q'] = '%' . $q . '%';
+        }
+
+        if ($minPrice > 0) {
+            $where[] = 'price >= :min_price';
+            $params['min_price'] = $minPrice;
+        }
+
+        if ($maxPrice > 0) {
+            $where[] = 'price <= :max_price';
+            $params['max_price'] = $maxPrice;
+        }
+
+        $whereSql = $where ? (' WHERE ' . implode(' AND ', $where)) : '';
+
+        $countStmt = db()->prepare('SELECT COUNT(*) FROM phones' . $whereSql);
+        $countStmt->execute($params);
+        $totalPhones = (int) $countStmt->fetchColumn();
+
+        $totalPages = max(1, (int) ceil($totalPhones / $perPage));
+        if ($page > $totalPages) {
+            $page = $totalPages;
+        }
+
+        $offset = ($page - 1) * $perPage;
+
+        $stmt = db()->prepare('SELECT * FROM phones' . $whereSql . ' ORDER BY ' . $orderBy . ' LIMIT :limit OFFSET :offset');
+        foreach ($params as $key => $value) {
+            $stmt->bindValue(':' . $key, $value);
+        }
+        $stmt->bindValue(':limit', $perPage, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+        $stmt->execute();
+        $phones = $stmt->fetchAll();
+
+        $wishlistIds = [];
+        if (current_user()) {
+            ensure_wishlist_table();
+            $wStmt = db()->prepare('SELECT phone_id FROM wishlists WHERE user_id = :user_id');
+            $wStmt->execute(['user_id' => (int) current_user()['id']]);
+            $wishlistIds = array_map('intval', array_column($wStmt->fetchAll(), 'phone_id'));
+        }
+
+        render('catalog/index', compact('phones', 'wishlistIds', 'q', 'minPrice', 'maxPrice', 'sort', 'page', 'totalPages', 'totalPhones'));
         break;
 
     case '/product':
@@ -303,6 +364,63 @@ switch ($path) {
 
         render('catalog/show', compact('phone'));
         break;
+
+    case '/wishlist':
+        if (!current_user()) {
+            flash('error', 'Сначала войдите в аккаунт.');
+            redirect('/login');
+        }
+
+        ensure_wishlist_table();
+
+        $stmt = db()->prepare('SELECT p.* FROM wishlists w JOIN phones p ON p.id = w.phone_id WHERE w.user_id = :user_id ORDER BY w.created_at DESC');
+        $stmt->execute(['user_id' => (int) current_user()['id']]);
+        $phones = $stmt->fetchAll();
+
+        render('catalog/wishlist', compact('phones'));
+        break;
+
+    case '/wishlist/toggle':
+        if ($method !== 'POST' || !verify_csrf()) {
+            flash('error', 'Невалидный запрос.');
+            redirect('/catalog');
+        }
+
+        if (!current_user()) {
+            flash('error', 'Сначала войдите в аккаунт.');
+            redirect('/login');
+        }
+
+        ensure_wishlist_table();
+
+        $phoneId = (int) ($_POST['phone_id'] ?? 0);
+        $redirectPath = (string) ($_POST['redirect_path'] ?? '/catalog');
+        if ($redirectPath === '') {
+            $redirectPath = '/catalog';
+        }
+
+        $existsStmt = db()->prepare('SELECT id FROM phones WHERE id = :id');
+        $existsStmt->execute(['id' => $phoneId]);
+        if (!$existsStmt->fetch()) {
+            flash('error', 'Товар не найден.');
+            redirect('/catalog');
+        }
+
+        $isFavStmt = db()->prepare('SELECT id FROM wishlists WHERE user_id = :user_id AND phone_id = :phone_id');
+        $isFavStmt->execute(['user_id' => (int) current_user()['id'], 'phone_id' => $phoneId]);
+        $isFav = (bool) $isFavStmt->fetch();
+
+        if ($isFav) {
+            $del = db()->prepare('DELETE FROM wishlists WHERE user_id = :user_id AND phone_id = :phone_id');
+            $del->execute(['user_id' => (int) current_user()['id'], 'phone_id' => $phoneId]);
+            flash('success', 'Товар удалён из избранного.');
+        } else {
+            $ins = db()->prepare('INSERT INTO wishlists (user_id, phone_id) VALUES (:user_id, :phone_id)');
+            $ins->execute(['user_id' => (int) current_user()['id'], 'phone_id' => $phoneId]);
+            flash('success', 'Товар добавлен в избранное.');
+        }
+
+        redirect($redirectPath);
 
     case '/cart':
         $cartItems = $_SESSION['cart'] ?? [];
@@ -403,6 +521,14 @@ switch ($path) {
                 ]);
             }
 
+            ensure_order_history_table();
+            $histStmt = $pdo->prepare('INSERT INTO order_status_history (order_id, status, comment) VALUES (:order_id, :status, :comment)');
+            $histStmt->execute([
+                'order_id' => $orderId,
+                'status' => 'new',
+                'comment' => 'Заказ создан пользователем',
+            ]);
+
             $pdo->commit();
         } catch (Throwable $e) {
             $pdo->rollBack();
@@ -426,10 +552,15 @@ switch ($path) {
         $ordersStmt->execute(['user_id' => (int) current_user()['id']]);
         $orders = $ordersStmt->fetchAll();
 
+        ensure_order_history_table();
+
         $itemsStmt = db()->prepare('SELECT order_id, product_name, unit_price, qty FROM order_items WHERE order_id = :order_id');
+        $historyStmt = db()->prepare('SELECT status, comment, created_at FROM order_status_history WHERE order_id = :order_id ORDER BY created_at ASC');
         foreach ($orders as &$order) {
             $itemsStmt->execute(['order_id' => (int) $order['id']]);
             $order['items'] = $itemsStmt->fetchAll();
+            $historyStmt->execute(['order_id' => (int) $order['id']]);
+            $order['history'] = $historyStmt->fetchAll();
         }
         unset($order);
 
@@ -442,9 +573,53 @@ switch ($path) {
             redirect('/');
         }
 
+        ensure_orders_tables();
         $usersCount = (int) db()->query('SELECT COUNT(*) FROM users')->fetchColumn();
         $phonesCount = (int) db()->query('SELECT COUNT(*) FROM phones')->fetchColumn();
-        render('admin/dashboard', compact('usersCount', 'phonesCount'));
+        $ordersCount = (int) db()->query('SELECT COUNT(*) FROM orders')->fetchColumn();
+        render('admin/dashboard', compact('usersCount', 'phonesCount', 'ordersCount'));
+        break;
+
+    case '/admin/orders':
+        if (!is_admin()) {
+            flash('error', 'Доступ запрещен.');
+            redirect('/');
+        }
+
+        ensure_orders_tables();
+        ensure_order_history_table();
+
+        $allowedStatuses = ['new', 'paid', 'shipped', 'delivered', 'cancelled'];
+
+        if ($method === 'POST') {
+            if (!verify_csrf()) {
+                flash('error', 'Невалидный CSRF токен.');
+                redirect('/admin/orders');
+            }
+
+            $orderId = (int) ($_POST['order_id'] ?? 0);
+            $status = (string) ($_POST['status'] ?? 'new');
+            if (!in_array($status, $allowedStatuses, true)) {
+                flash('error', 'Некорректный статус.');
+                redirect('/admin/orders');
+            }
+
+            $updateStmt = db()->prepare('UPDATE orders SET status = :status WHERE id = :id');
+            $updateStmt->execute(['status' => $status, 'id' => $orderId]);
+
+            $histStmt = db()->prepare('INSERT INTO order_status_history (order_id, status, comment) VALUES (:order_id, :status, :comment)');
+            $histStmt->execute([
+                'order_id' => $orderId,
+                'status' => $status,
+                'comment' => 'Статус обновлен администратором',
+            ]);
+
+            flash('success', 'Статус заказа обновлен.');
+            redirect('/admin/orders');
+        }
+
+        $orders = db()->query('SELECT o.id, o.user_id, o.total_amount, o.status, o.created_at, u.name AS user_name, u.email AS user_email FROM orders o JOIN users u ON u.id = o.user_id ORDER BY o.created_at DESC')->fetchAll();
+        render('admin/orders', compact('orders', 'allowedStatuses'));
         break;
 
     case '/admin/phones':

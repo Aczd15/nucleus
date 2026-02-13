@@ -339,3 +339,25 @@ button {
   background-size: 220% 220%;
   animation: gradientFlow 4s linear infinite;
 }
+
+
+.filters-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: .8rem;
+}
+
+.pagination {
+  display: flex;
+  gap: .4rem;
+  flex-wrap: wrap;
+}
+
+.status-history {
+  margin: .3rem 0 .8rem;
+  padding-left: 1rem;
+}
+
+.status-history li {
+  margin-bottom: .35rem;
+}

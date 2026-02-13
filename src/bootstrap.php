@@ -67,6 +67,32 @@ function ensure_orders_tables(): void
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4');
 }
 
+
+function ensure_order_history_table(): void
+{
+    db()->exec('CREATE TABLE IF NOT EXISTS order_status_history (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        order_id INT NOT NULL,
+        status VARCHAR(50) NOT NULL,
+        comment VARCHAR(255) DEFAULT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        INDEX (order_id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4');
+}
+
+function ensure_wishlist_table(): void
+{
+    db()->exec('CREATE TABLE IF NOT EXISTS wishlists (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        phone_id INT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY uniq_user_phone (user_id, phone_id),
+        INDEX (user_id),
+        INDEX (phone_id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4');
+}
+
 function render(string $view, array $data = []): void
 {
     extract($data, EXTR_SKIP);
