@@ -90,3 +90,15 @@ php scripts/create_admin.php "Admin" "admin@nucleus.local" "StrongPass123"
 ```
 3. Если получили ошибку `Duplicate entry`, значит такой email уже есть — используйте другой email.
 
+### SQL-запрос для создания администратора напрямую
+> Важно: хеш ниже подходит для пароля `StrongPass123` только при `password_pepper = change-this-super-secret-pepper`.
+
+```sql
+INSERT INTO users (name, email, password_hash, role)
+VALUES (
+  'Admin',
+  'admin@nucleus.local',
+  '$2y$12$6b.6IGPot.I1KZlVZc/ZgucaBMdntdSJY3V3jvLPXBGmTcRLJAfui',
+  'admin'
+);
+```

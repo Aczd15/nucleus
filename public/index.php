@@ -20,6 +20,7 @@ if (is_string($routeParam) && $routeParam !== '') {
 
 switch ($path) {
     case '/':
+    case '/index.php':
         render('home/index');
         break;
 
