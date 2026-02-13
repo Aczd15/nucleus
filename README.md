@@ -73,7 +73,7 @@ php -S 0.0.0.0:8080 router.php
 ## Основные URL
 - без rewrite: `/index.php?r=/` , `/index.php?r=/catalog` и т.д.
 - с rewrite: `/`, `/catalog`, `/cart`, `/admin`
-- доп. страницы: `/about`, `/delivery-payment`
+- доп. страницы: `/about`, `/delivery-payment`, `/wow`, `/compare-lab`
 
 ## Безопасность
 - CSRF-защита для POST-форм.
@@ -140,3 +140,5 @@ php scripts/init_db.php
 ```
 
 - Добавление в корзину доступно только авторизованным пользователям.
+
+- Добавлены эффектные страницы: `WOW Space` и `Compare Lab` с анимациями и визуальными эффектами.

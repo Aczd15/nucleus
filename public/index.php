@@ -47,6 +47,21 @@ switch ($path) {
         render('home/delivery');
         break;
 
+
+    case '/wow':
+        $highlights = [
+            ['title' => 'Hyper Charge Zone', 'text' => 'Демо-стенд, где вы сравниваете скорость зарядки разных флагманов в реальном времени.'],
+            ['title' => 'Night Camera Battle', 'text' => 'Сравнение ночной съемки в одинаковых условиях освещения.'],
+            ['title' => 'Pro Creator Setup', 'text' => 'Готовые наборы смартфон + микрофон + стабилизатор для контент-мейкеров.'],
+        ];
+        render('home/wow', compact('highlights'));
+        break;
+
+    case '/compare-lab':
+        $compare = db()->query('SELECT id, name, specs, price, image FROM phones ORDER BY created_at DESC LIMIT 3')->fetchAll();
+        render('home/compare', compact('compare'));
+        break;
+
     case '/register':
         if ($method === 'GET') {
             $a = random_int(2, 9);

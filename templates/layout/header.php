@@ -14,6 +14,8 @@
         <a class="nav-link" href="<?= htmlspecialchars(url('/catalog')) ?>">Каталог</a>
         <a class="nav-link" href="<?= htmlspecialchars(url('/about')) ?>">О компании</a>
         <a class="nav-link" href="<?= htmlspecialchars(url('/delivery-payment')) ?>">Доставка/Оплата</a>
+        <a class="nav-link" href="<?= htmlspecialchars(url('/wow')) ?>">WOW Space</a>
+        <a class="nav-link" href="<?= htmlspecialchars(url('/compare-lab')) ?>">Compare Lab</a>
         <a class="nav-link" href="<?= htmlspecialchars(url('/cart')) ?>">Корзина</a>
         <?php if (current_user()): ?>
             <?php if (is_admin()): ?><a class="nav-link" href="<?= htmlspecialchars(url('/admin')) ?>">Админ</a><?php endif; ?>
