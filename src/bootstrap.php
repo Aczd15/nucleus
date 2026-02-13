@@ -159,6 +159,74 @@ function uploads_base_url(): string
     return $base . '/public/uploads';
 }
 
+
+function normalize_uploaded_image(string $tmpPath, string $destinationPath, string $extension, int $maxWidth = 1280, int $maxHeight = 1280): bool
+{
+    if (!is_file($tmpPath)) {
+        return false;
+    }
+
+    $extension = strtolower($extension);
+    $supported = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
+    if (!in_array($extension, $supported, true)) {
+        return false;
+    }
+
+    if (!function_exists('imagecreatetruecolor')) {
+        return move_uploaded_file($tmpPath, $destinationPath);
+    }
+
+    $meta = @getimagesize($tmpPath);
+    if (!$meta || empty($meta[0]) || empty($meta[1])) {
+        return false;
+    }
+
+    [$width, $height] = $meta;
+    $src = match ($extension) {
+        'jpg', 'jpeg' => @imagecreatefromjpeg($tmpPath),
+        'png' => @imagecreatefrompng($tmpPath),
+        'webp' => function_exists('imagecreatefromwebp') ? @imagecreatefromwebp($tmpPath) : false,
+        'gif' => @imagecreatefromgif($tmpPath),
+        default => false,
+    };
+
+    if (!$src) {
+        return move_uploaded_file($tmpPath, $destinationPath);
+    }
+
+    $ratio = min($maxWidth / $width, $maxHeight / $height, 1);
+    $newWidth = max(1, (int) round($width * $ratio));
+    $newHeight = max(1, (int) round($height * $ratio));
+
+    $dst = imagecreatetruecolor($newWidth, $newHeight);
+
+    if (in_array($extension, ['png', 'webp', 'gif'], true)) {
+        imagealphablending($dst, false);
+        imagesavealpha($dst, true);
+        $transparent = imagecolorallocatealpha($dst, 0, 0, 0, 127);
+        imagefilledrectangle($dst, 0, 0, $newWidth, $newHeight, $transparent);
+    }
+
+    imagecopyresampled($dst, $src, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
+
+    $saved = match ($extension) {
+        'jpg', 'jpeg' => imagejpeg($dst, $destinationPath, 84),
+        'png' => imagepng($dst, $destinationPath, 6),
+        'webp' => function_exists('imagewebp') ? imagewebp($dst, $destinationPath, 84) : false,
+        'gif' => imagegif($dst, $destinationPath),
+        default => false,
+    };
+
+    imagedestroy($src);
+    imagedestroy($dst);
+
+    if ($saved) {
+        @unlink($tmpPath);
+    }
+
+    return (bool) $saved;
+}
+
 function redirect(string $path): never
 {
     header('Location: ' . url($path));

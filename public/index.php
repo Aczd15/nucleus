@@ -494,8 +494,8 @@ switch ($path) {
                 $fileName = 'phone_' . bin2hex(random_bytes(8)) . '.' . $ext;
                 $dest = $uploadDir . '/' . $fileName;
 
-                if (!move_uploaded_file($tmp, $dest)) {
-                    flash('error', 'Не удалось сохранить загруженное изображение.');
+                if (!normalize_uploaded_image($tmp, $dest, $ext, 1280, 1280)) {
+                    flash('error', 'Не удалось обработать и сохранить изображение.');
                     redirect('/admin/phones');
                 }
 
