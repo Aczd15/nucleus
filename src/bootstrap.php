@@ -78,6 +78,17 @@ function url(string $path = '/'): string
     return $entry . '?r=' . rawurlencode($normalized);
 }
 
+function url_with_query(string $path, array $params = []): string
+{
+    $base = url($path);
+    if (!$params) {
+        return $base;
+    }
+
+    $separator = str_contains($base, '?') ? '&' : '?';
+    return $base . $separator . http_build_query($params);
+}
+
 function asset_url(string $path): string
 {
     $base = app_base_url();

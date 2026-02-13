@@ -8,7 +8,7 @@
                 <p><?= htmlspecialchars($phone['description']) ?></p>
                 <div class="row">
                     <strong><?= number_format((float)$phone['price'], 0, '.', ' ') ?> ₽</strong>
-                    <a href="<?= htmlspecialchars(url('/product')) ?>?id=<?= (int) $phone['id'] ?>">Характеристики</a>
+                    <a href="<?= htmlspecialchars(url_with_query('/product', ['id' => (int) $phone['id']])) ?>">Характеристики</a>
                 </div>
                 <form method="post" action="<?= htmlspecialchars(url('/cart/add')) ?>" style="margin-top:.7rem;">
                     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token()) ?>">

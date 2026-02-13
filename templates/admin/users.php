@@ -22,7 +22,7 @@
                     </form>
                 </td>
                 <td><?= htmlspecialchars($user['created_at']) ?></td>
-                <td><a href="<?= htmlspecialchars(url('/admin/users')) ?>?delete=<?= (int) $user['id'] ?>" onclick="return confirm('Удалить пользователя?')">Удалить</a></td>
+                <td><a href="<?= htmlspecialchars(url_with_query('/admin/users', ['delete' => (int) $user['id']])) ?>" onclick="return confirm('Удалить пользователя?')">Удалить</a></td>
             </tr>
         <?php endforeach; ?>
         </tbody>
