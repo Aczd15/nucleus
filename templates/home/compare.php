@@ -28,7 +28,7 @@
         <div class="grid compare-grid">
             <?php foreach ($comparePhones as $phone): ?>
                 <article class="card compare-card">
-                    <img class="product-image" src="<?= htmlspecialchars($phone['image'] ?: 'https://placehold.co/640x480?text=Phone') ?>" alt="<?= htmlspecialchars($phone['name']) ?>" loading="lazy">
+                    <div class="product-image-frame"><img class="product-image" src="<?= htmlspecialchars($phone['image'] ?: 'https://placehold.co/640x480?text=Phone') ?>" alt="<?= htmlspecialchars($phone['name']) ?>" loading="lazy"></div>
                     <h3><?= htmlspecialchars($phone['name']) ?></h3>
                     <strong><?= number_format((float)$phone['price'], 0, '.', ' ') ?> ₽</strong>
                     <a class="nav-link" href="<?= htmlspecialchars(url_with_query('/product', ['id' => (int) $phone['id']])) ?>">Открыть товар</a>

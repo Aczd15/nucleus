@@ -3,7 +3,7 @@
     <div class="grid phones">
         <?php foreach ($phones as $phone): ?>
             <article class="card">
-                <img class="product-image" src="<?= htmlspecialchars($phone['image'] ?: 'https://placehold.co/640x480?text=Phone') ?>" alt="<?= htmlspecialchars($phone['name']) ?>" loading="lazy">
+                <div class="product-image-frame"><img class="product-image" src="<?= htmlspecialchars($phone['image'] ?: 'https://placehold.co/640x480?text=Phone') ?>" alt="<?= htmlspecialchars($phone['name']) ?>" loading="lazy"></div>
                 <h3><?= htmlspecialchars($phone['name']) ?></h3>
                 <p><?= htmlspecialchars($phone['description']) ?></p>
                 <div class="row">
