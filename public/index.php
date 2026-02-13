@@ -100,7 +100,22 @@ switch ($path) {
         }
 
         $specLabels = array_keys($specLabels);
-        render('home/compare', compact('allPhones', 'comparePhones', 'selectedIds', 'specLabels', 'specMatrix'));
+
+        $priceChart = [];
+        if ($comparePhones) {
+            $maxPrice = max(array_map(static fn (array $phone): float => (float) $phone['price'], $comparePhones));
+            foreach ($comparePhones as $phone) {
+                $price = (float) $phone['price'];
+                $priceChart[] = [
+                    'id' => (int) $phone['id'],
+                    'name' => (string) $phone['name'],
+                    'price' => $price,
+                    'percent' => $maxPrice > 0 ? max(8.0, round(($price / $maxPrice) * 100, 2)) : 0.0,
+                ];
+            }
+        }
+
+        render('home/compare', compact('allPhones', 'comparePhones', 'selectedIds', 'specLabels', 'specMatrix', 'priceChart'));
         break;
 
     case '/register':

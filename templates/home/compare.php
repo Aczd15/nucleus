@@ -37,6 +37,25 @@
         </div>
     </section>
 
+
+    <section class="card" style="margin-top:1rem;">
+        <h2>График цен</h2>
+        <p class="muted">Визуальное сравнение стоимости выбранных моделей.</p>
+        <div class="price-chart">
+            <?php foreach ($priceChart as $point): ?>
+                <div class="price-chart-row">
+                    <div class="price-chart-meta">
+                        <strong><?= htmlspecialchars($point['name']) ?></strong>
+                        <span><?= number_format((float) $point['price'], 0, '.', ' ') ?> ₽</span>
+                    </div>
+                    <div class="price-chart-track" aria-hidden="true">
+                        <div class="price-chart-bar" style="width: <?= (float) $point['percent'] ?>%"></div>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        </div>
+    </section>
+
     <section style="margin-top:1rem;">
         <h2>Таблица сравнения</h2>
         <table class="table compare-table">
