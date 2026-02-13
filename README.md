@@ -77,3 +77,16 @@ php -S 0.0.0.0:8080 router.php
 ## Безопасность
 - CSRF-защита для POST-форм.
 - Пароли: `hash_hmac(sha256 + pepper)` + `password_hash/password_verify`.
+
+## Почему была 404 и как исправлено
+- Главная страница восстановлена на маршрут `/`.
+- `404` теперь показывается только для неизвестных URL.
+
+## Как добавить администратора
+1. Убедитесь, что БД создана (`php scripts/init_db.php` или импорт `sql/schema.sql`).
+2. Выполните:
+```bash
+php scripts/create_admin.php "Admin" "admin@nucleus.local" "StrongPass123"
+```
+3. Если получили ошибку `Duplicate entry`, значит такой email уже есть — используйте другой email.
+

@@ -14,6 +14,19 @@ spl_autoload_register(static function (string $class): void {
     }
 });
 
+use App\Database;
+
+function db(): PDO
+{
+    global $config;
+    static $pdo = null;
+
+    if (!$pdo) {
+        $pdo = Database::connect($config['db']);
+    }
+
+    return $pdo;
+}
 
 function render(string $view, array $data = []): void
 {
@@ -53,10 +66,6 @@ function url(string $path = '/'): string
     $base = app_base_url();
     $normalized = '/' . ltrim($path, '/');
 
-    if ($normalized === '//') {
-        $normalized = '/';
-    }
-
     if (use_rewrite()) {
         return $base . $normalized;
     }
@@ -79,36 +88,6 @@ function asset_url(string $path): string
     }
 
     return $base . '/public/assets/' . $normalized;
-}
-
-function redirect(string $path): never
-{
-    header('Location: ' . url($path));
-    exit;
-}
-
-function csrf_token(): string
-{
-    if (empty($_SESSION['csrf_token'])) {
-        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-    }
-    return $_SESSION['csrf_token'];
-}
-
-function verify_csrf(): bool
-{
-    return isset($_POST['csrf_token'], $_SESSION['csrf_token'])
-        && hash_equals($_SESSION['csrf_token'], $_POST['csrf_token']);
-}
-
-function current_user(): ?array
-{
-    return $_SESSION['user'] ?? null;
-}
-
-function is_admin(): bool
-{
-    return (current_user()['role'] ?? '') === 'admin';
 }
 
 function flash(string $key, ?string $message = null): ?string

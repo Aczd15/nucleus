@@ -12,7 +12,7 @@ if (!$name || !$email || !$password) {
     exit(1);
 }
 
-$stmt = $db->prepare('INSERT INTO users (name, email, password_hash, role) VALUES (:name, :email, :password_hash, :role)');
+$stmt = db()->prepare('INSERT INTO users (name, email, password_hash, role) VALUES (:name, :email, :password_hash, :role)');
 $stmt->execute([
     'name' => $name,
     'email' => $email,
