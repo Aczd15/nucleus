@@ -144,6 +144,48 @@ button {
   border-bottom: 1px solid rgba(226,232,240,.7);
 }
 
+
+.menu-dropdown {
+  position: relative;
+}
+
+.menu-trigger {
+  list-style: none;
+  cursor: pointer;
+  padding: .5rem .95rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: #fff;
+  font-weight: 600;
+}
+
+.menu-trigger::-webkit-details-marker {
+  display: none;
+}
+
+.menu-panel {
+  position: absolute;
+  top: calc(100% + .55rem);
+  right: 0;
+  width: min(320px, 88vw);
+  display: grid;
+  gap: .45rem;
+  padding: .8rem;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,.98);
+  box-shadow: 0 18px 40px rgba(15, 23, 42, .18);
+  z-index: 25;
+}
+
+.menu-panel .nav-link {
+  justify-content: flex-start;
+}
+
+.menu-user {
+  padding: .35rem .15rem;
+}
+
 .nav-menu {
   display: flex;
   gap: .65rem;
