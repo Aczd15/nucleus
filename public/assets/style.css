@@ -407,3 +407,18 @@ button {
 .status-history li {
   margin-bottom: .35rem;
 }
+
+
+.cancel-order-form {
+  margin: .65rem 0 .8rem;
+  max-width: 460px;
+}
+
+.cancel-order-form textarea {
+  min-height: 72px;
+}
+
+.admin-order-form {
+  display: grid;
+  gap: .45rem;
+}

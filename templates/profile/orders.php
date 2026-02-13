@@ -11,6 +11,17 @@
                 <p>Дата: <?= htmlspecialchars($order['created_at']) ?></p>
                 <p>Сумма: <strong><?= number_format((float) $order['total_amount'], 0, '.', ' ') ?> ₽</strong></p>
 
+                <?php if (!in_array((string) $order['status'], ['delivered', 'cancelled'], true)): ?>
+                    <form method="post" action="<?= htmlspecialchars(url('/orders/cancel')) ?>" class="cancel-order-form" onsubmit="return confirm('Отменить заказ?')">
+                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token()) ?>">
+                        <input type="hidden" name="order_id" value="<?= (int) $order['id'] ?>">
+                        <label>Причина отмены
+                            <textarea name="reason" required placeholder="Укажите причину отмены"></textarea>
+                        </label>
+                        <button type="submit">Отменить заказ</button>
+                    </form>
+                <?php endif; ?>
+
                 <?php if (!empty($order['history'])): ?>
                     <h4>История статусов</h4>
                     <ul class="status-history">

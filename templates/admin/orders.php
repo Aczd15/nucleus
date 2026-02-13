@@ -23,7 +23,7 @@
                 <td><strong><?= htmlspecialchars($order['status']) ?></strong></td>
                 <td><?= htmlspecialchars($order['created_at']) ?></td>
                 <td>
-                    <form method="post" action="<?= htmlspecialchars(url('/admin/orders')) ?>" class="inline">
+                    <form method="post" action="<?= htmlspecialchars(url('/admin/orders')) ?>" class="admin-order-form">
                         <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token()) ?>">
                         <input type="hidden" name="order_id" value="<?= (int) $order['id'] ?>">
                         <select name="status">
@@ -31,6 +31,7 @@
                                 <option value="<?= htmlspecialchars($status) ?>" <?= $status === $order['status'] ? 'selected' : '' ?>><?= htmlspecialchars($status) ?></option>
                             <?php endforeach; ?>
                         </select>
+                        <input type="text" name="cancel_reason" placeholder="Причина отказа (если отмена)">
                         <button type="submit">Обновить</button>
                     </form>
                 </td>

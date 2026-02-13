@@ -542,6 +542,58 @@ switch ($path) {
         flash('success', 'Заказ успешно оформлен.');
         redirect('/orders');
 
+    case '/orders/cancel':
+        if (!current_user()) {
+            flash('error', 'Сначала войдите в аккаунт.');
+            redirect('/login');
+        }
+
+        if ($method !== 'POST' || !verify_csrf()) {
+            flash('error', 'Невалидный запрос.');
+            redirect('/orders');
+        }
+
+        ensure_orders_tables();
+        ensure_order_history_table();
+
+        $orderId = (int) ($_POST['order_id'] ?? 0);
+        $reason = trim((string) ($_POST['reason'] ?? ''));
+
+        if ($reason === '') {
+            flash('error', 'Укажите причину отмены заказа.');
+            redirect('/orders');
+        }
+
+        $orderStmt = db()->prepare('SELECT id, status FROM orders WHERE id = :id AND user_id = :user_id');
+        $orderStmt->execute([
+            'id' => $orderId,
+            'user_id' => (int) current_user()['id'],
+        ]);
+        $order = $orderStmt->fetch();
+
+        if (!$order) {
+            flash('error', 'Заказ не найден.');
+            redirect('/orders');
+        }
+
+        if (in_array((string) $order['status'], ['delivered', 'cancelled'], true)) {
+            flash('error', 'Этот заказ уже нельзя отменить.');
+            redirect('/orders');
+        }
+
+        $upd = db()->prepare('UPDATE orders SET status = :status WHERE id = :id');
+        $upd->execute(['status' => 'cancelled', 'id' => $orderId]);
+
+        $hist = db()->prepare('INSERT INTO order_status_history (order_id, status, comment) VALUES (:order_id, :status, :comment)');
+        $hist->execute([
+            'order_id' => $orderId,
+            'status' => 'cancelled',
+            'comment' => 'Отмена пользователем: ' . $reason,
+        ]);
+
+        flash('success', 'Заказ отменен.');
+        redirect('/orders');
+
     case '/orders':
         if (!current_user()) {
             flash('error', 'Сначала войдите в аккаунт.');
@@ -601,19 +653,29 @@ switch ($path) {
 
             $orderId = (int) ($_POST['order_id'] ?? 0);
             $status = (string) ($_POST['status'] ?? 'new');
+            $cancelReason = trim((string) ($_POST['cancel_reason'] ?? ''));
             if (!in_array($status, $allowedStatuses, true)) {
                 flash('error', 'Некорректный статус.');
+                redirect('/admin/orders');
+            }
+
+            if ($status === 'cancelled' && $cancelReason === '') {
+                flash('error', 'Для отмены заказа укажите причину отказа.');
                 redirect('/admin/orders');
             }
 
             $updateStmt = db()->prepare('UPDATE orders SET status = :status WHERE id = :id');
             $updateStmt->execute(['status' => $status, 'id' => $orderId]);
 
+            $comment = $status === 'cancelled'
+                ? ('Отменено администратором. Причина: ' . $cancelReason)
+                : 'Статус обновлен администратором';
+
             $histStmt = db()->prepare('INSERT INTO order_status_history (order_id, status, comment) VALUES (:order_id, :status, :comment)');
             $histStmt->execute([
                 'order_id' => $orderId,
                 'status' => $status,
-                'comment' => 'Статус обновлен администратором',
+                'comment' => $comment,
             ]);
 
             flash('success', 'Статус заказа обновлен.');
