@@ -145,6 +145,20 @@ function asset_url(string $path): string
     return $base . '/public/assets/' . $normalized;
 }
 
+
+function uploads_base_url(): string
+{
+    $base = app_base_url();
+    $scriptFilename = str_replace('\\', '/', (string) ($_SERVER['SCRIPT_FILENAME'] ?? ''));
+    $scriptDir = basename(dirname($scriptFilename));
+
+    if ($scriptDir === 'public') {
+        return $base . '/uploads';
+    }
+
+    return $base . '/public/uploads';
+}
+
 function redirect(string $path): never
 {
     header('Location: ' . url($path));

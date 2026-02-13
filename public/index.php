@@ -450,6 +450,42 @@ switch ($path) {
             $specs = trim($_POST['specs'] ?? '');
             $price = (float) ($_POST['price'] ?? 0);
             $image = trim($_POST['image'] ?? '');
+            $existingImage = trim($_POST['existing_image'] ?? '');
+
+            if ($image === '' && $existingImage !== '') {
+                $image = $existingImage;
+            }
+
+            if (isset($_FILES['image_file']) && is_array($_FILES['image_file']) && (int) ($_FILES['image_file']['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
+                if ((int) $_FILES['image_file']['error'] !== UPLOAD_ERR_OK) {
+                    flash('error', 'Ошибка загрузки файла изображения.');
+                    redirect('/admin/phones');
+                }
+
+                $tmp = (string) $_FILES['image_file']['tmp_name'];
+                $originalName = (string) ($_FILES['image_file']['name'] ?? '');
+                $ext = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
+                $allowed = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
+                if (!in_array($ext, $allowed, true)) {
+                    flash('error', 'Разрешены только изображения: jpg, jpeg, png, webp, gif.');
+                    redirect('/admin/phones');
+                }
+
+                $uploadDir = __DIR__ . '/uploads';
+                if (!is_dir($uploadDir)) {
+                    mkdir($uploadDir, 0777, true);
+                }
+
+                $fileName = 'phone_' . bin2hex(random_bytes(8)) . '.' . $ext;
+                $dest = $uploadDir . '/' . $fileName;
+
+                if (!move_uploaded_file($tmp, $dest)) {
+                    flash('error', 'Не удалось сохранить загруженное изображение.');
+                    redirect('/admin/phones');
+                }
+
+                $image = uploads_base_url() . '/' . $fileName;
+            }
 
             if ($id > 0) {
                 if ($hasPhoneSpecs) {
