@@ -33,6 +33,12 @@ function app_base_url(): string
     return rtrim((string) ($config['app']['base_url'] ?? ''), '/');
 }
 
+function use_rewrite(): bool
+{
+    global $config;
+    return (bool) ($config['app']['use_rewrite'] ?? false);
+}
+
 function url(string $path = '/'): string
 {
     $base = app_base_url();
@@ -42,7 +48,16 @@ function url(string $path = '/'): string
         $normalized = '/';
     }
 
-    return $base . $normalized;
+    if (use_rewrite()) {
+        return $base . $normalized;
+    }
+
+    $entry = $base . '/index.php';
+    if ($normalized === '/') {
+        return $entry;
+    }
+
+    return $entry . '?r=' . rawurlencode($normalized);
 }
 
 function redirect(string $path): never

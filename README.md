@@ -43,12 +43,18 @@ php scripts/init_db.php
 
 
 ### Apache (XAMPP/OpenServer) — если видите "Not Found"
-1. Убедитесь, что включен `mod_rewrite`.
-2. Разрешите `.htaccess` для папки проекта (`AllowOverride All`).
-3. В проекте уже добавлены `.htaccess` (в корне и в `public/`) для маршрутизации.
-4. Если проект открыт в подпапке, например `http://localhost/nucleus`, укажите базовый путь в `config/config.php`:
+Проект теперь поддерживает режим **без rewrite** (по умолчанию), поэтому должен открываться даже если `mod_rewrite` выключен.
+
+1. Если проект лежит в `htdocs/nucleus`, откройте:
+   - `http://localhost/nucleus/index.php`
+2. В `config/config.php` установите:
    - `base_url` => `/nucleus`
-5. Перезапустите Apache после изменения конфигурации.
+   - `use_rewrite` => `false` (по умолчанию)
+3. В этом режиме ссылки работают как:
+   - `/nucleus/index.php?r=/catalog`
+4. Если хотите красивые URL (`/catalog`), включите rewrite:
+   - `use_rewrite` => `true`
+   - включите `mod_rewrite` и `AllowOverride All`.
 
 ### 4) Создайте администратора
 ```bash
@@ -61,12 +67,8 @@ php -S 0.0.0.0:8080 router.php
 ```
 
 ## Основные URL
-- `/` — главная
-- `/register` — регистрация
-- `/login` — вход
-- `/catalog` — каталог
-- `/cart` — корзина
-- `/admin` — админ-панель (только admin)
+- без rewrite: `/index.php?r=/` , `/index.php?r=/catalog` и т.д.
+- с rewrite: `/`, `/catalog`, `/cart`, `/admin`
 
 ## Безопасность
 - CSRF-защита для POST-форм.

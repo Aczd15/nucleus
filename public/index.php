@@ -2,14 +2,20 @@
 
 require __DIR__ . '/../src/bootstrap.php';
 
-$requestPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH) ?? '/';
-$baseUrl = app_base_url();
+$routeParam = $_GET['r'] ?? null;
 
-if ($baseUrl !== '' && str_starts_with($requestPath, $baseUrl)) {
-    $path = substr($requestPath, strlen($baseUrl));
-    $path = $path === '' ? '/' : $path;
+if (is_string($routeParam) && $routeParam !== '') {
+    $path = '/' . ltrim($routeParam, '/');
 } else {
-    $path = $requestPath;
+    $requestPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH) ?? '/';
+    $baseUrl = app_base_url();
+
+    if ($baseUrl !== '' && str_starts_with($requestPath, $baseUrl)) {
+        $path = substr($requestPath, strlen($baseUrl));
+        $path = $path === '' ? '/' : $path;
+    } else {
+        $path = $requestPath;
+    }
 }
 
 $method = $_SERVER['REQUEST_METHOD'];
