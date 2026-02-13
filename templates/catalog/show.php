@@ -5,7 +5,7 @@
         <h1><?= htmlspecialchars($phone['name']) ?></h1>
         <p><?= htmlspecialchars($phone['description']) ?></p>
         <h3>Характеристики</h3>
-        <p><?= nl2br(htmlspecialchars($phone['specs'] ?: 'Характеристики будут добавлены позже.')) ?></p>
+        <p><?= nl2br(htmlspecialchars(($phone['specs'] ?? '') ?: 'Характеристики будут добавлены позже.')) ?></p>
         <p><strong>Цена: <?= number_format((float)$phone['price'], 0, '.', ' ') ?> ₽</strong></p>
         <form method="post" action="<?= htmlspecialchars(url('/cart/add')) ?>">
             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token()) ?>">

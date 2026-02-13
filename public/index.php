@@ -21,6 +21,11 @@ if (is_string($routeParam) && $routeParam !== '') {
     }
 }
 
+$hasPhoneSpecs = db_has_column('phones', 'specs');
+$hasUserPhone = db_has_column('users', 'phone');
+$hasUserCity = db_has_column('users', 'city');
+$hasUserBirthDate = db_has_column('users', 'birth_date');
+
 switch ($path) {
     case '/':
     case '/index.php':
@@ -79,16 +84,26 @@ switch ($path) {
             break;
         }
 
-        $stmt = db()->prepare('INSERT INTO users (name, email, phone, city, birth_date, password_hash, role) VALUES (:name,:email,:phone,:city,:birth_date,:password_hash,:role)');
-        $stmt->execute([
-            'name' => $name,
-            'email' => $email,
-            'phone' => $phone !== '' ? $phone : null,
-            'city' => $city !== '' ? $city : null,
-            'birth_date' => $birthDate !== '' ? $birthDate : null,
-            'password_hash' => Auth::hashPassword($password, $config['app']['password_pepper']),
-            'role' => 'user',
-        ]);
+        if ($hasUserPhone && $hasUserCity && $hasUserBirthDate) {
+            $stmt = db()->prepare('INSERT INTO users (name, email, phone, city, birth_date, password_hash, role) VALUES (:name,:email,:phone,:city,:birth_date,:password_hash,:role)');
+            $stmt->execute([
+                'name' => $name,
+                'email' => $email,
+                'phone' => $phone !== '' ? $phone : null,
+                'city' => $city !== '' ? $city : null,
+                'birth_date' => $birthDate !== '' ? $birthDate : null,
+                'password_hash' => Auth::hashPassword($password, $config['app']['password_pepper']),
+                'role' => 'user',
+            ]);
+        } else {
+            $stmt = db()->prepare('INSERT INTO users (name, email, password_hash, role) VALUES (:name,:email,:password_hash,:role)');
+            $stmt->execute([
+                'name' => $name,
+                'email' => $email,
+                'password_hash' => Auth::hashPassword($password, $config['app']['password_pepper']),
+                'role' => 'user',
+            ]);
+        }
 
         flash('success', 'Регистрация прошла успешно.');
         redirect('/login');
@@ -235,12 +250,22 @@ switch ($path) {
             $image = trim($_POST['image'] ?? '');
 
             if ($id > 0) {
-                $stmt = db()->prepare('UPDATE phones SET name=:name, description=:description, specs=:specs, price=:price, image=:image WHERE id=:id');
-                $stmt->execute(compact('id', 'name', 'description', 'specs', 'price', 'image'));
+                if ($hasPhoneSpecs) {
+                    $stmt = db()->prepare('UPDATE phones SET name=:name, description=:description, specs=:specs, price=:price, image=:image WHERE id=:id');
+                    $stmt->execute(compact('id', 'name', 'description', 'specs', 'price', 'image'));
+                } else {
+                    $stmt = db()->prepare('UPDATE phones SET name=:name, description=:description, price=:price, image=:image WHERE id=:id');
+                    $stmt->execute(compact('id', 'name', 'description', 'price', 'image'));
+                }
                 flash('success', 'Телефон обновлен.');
             } else {
-                $stmt = db()->prepare('INSERT INTO phones (name, description, specs, price, image) VALUES (:name, :description, :specs, :price, :image)');
-                $stmt->execute(compact('name', 'description', 'specs', 'price', 'image'));
+                if ($hasPhoneSpecs) {
+                    $stmt = db()->prepare('INSERT INTO phones (name, description, specs, price, image) VALUES (:name, :description, :specs, :price, :image)');
+                    $stmt->execute(compact('name', 'description', 'specs', 'price', 'image'));
+                } else {
+                    $stmt = db()->prepare('INSERT INTO phones (name, description, price, image) VALUES (:name, :description, :price, :image)');
+                    $stmt->execute(compact('name', 'description', 'price', 'image'));
+                }
                 flash('success', 'Телефон добавлен.');
             }
 
@@ -291,7 +316,11 @@ switch ($path) {
             redirect('/admin/users');
         }
 
-        $users = db()->query('SELECT id, name, email, phone, city, birth_date, role, created_at FROM users ORDER BY created_at DESC')->fetchAll();
+        if ($hasUserPhone && $hasUserCity && $hasUserBirthDate) {
+            $users = db()->query('SELECT id, name, email, phone, city, birth_date, role, created_at FROM users ORDER BY created_at DESC')->fetchAll();
+        } else {
+            $users = db()->query('SELECT id, name, email, role, created_at FROM users ORDER BY created_at DESC')->fetchAll();
+        }
         render('admin/users', compact('users'));
         break;
 

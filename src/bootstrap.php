@@ -28,6 +28,22 @@ function db(): PDO
     return $pdo;
 }
 
+function db_has_column(string $table, string $column): bool
+{
+    static $cache = [];
+    $key = $table . '.' . $column;
+
+    if (array_key_exists($key, $cache)) {
+        return $cache[$key];
+    }
+
+    $stmt = db()->prepare("SHOW COLUMNS FROM `{$table}` LIKE :column");
+    $stmt->execute(['column' => $column]);
+    $cache[$key] = (bool) $stmt->fetch();
+
+    return $cache[$key];
+}
+
 function render(string $view, array $data = []): void
 {
     extract($data, EXTR_SKIP);

@@ -121,3 +121,17 @@ VALUES (
 - Открывайте проект как `http://localhost/nucleus/index.php`.
 - Очистите кеш браузера (Ctrl+F5).
 - Убедитесь, что файл доступен напрямую: `http://localhost/nucleus/public/assets/style.css`.
+
+
+### Если видите ошибку `Unknown column "specs"`
+У вас старая версия таблицы `phones`. Выполните миграцию:
+```sql
+ALTER TABLE phones ADD COLUMN specs TEXT DEFAULT NULL;
+ALTER TABLE users ADD COLUMN phone VARCHAR(30) DEFAULT NULL;
+ALTER TABLE users ADD COLUMN city VARCHAR(120) DEFAULT NULL;
+ALTER TABLE users ADD COLUMN birth_date DATE DEFAULT NULL;
+```
+Или заново инициализируйте БД:
+```bash
+php scripts/init_db.php
+```

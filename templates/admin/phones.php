@@ -26,7 +26,7 @@
                         <input type="hidden" name="id" value="<?= (int) $phone['id'] ?>">
                         <input type="text" name="name" value="<?= htmlspecialchars($phone['name']) ?>" required>
                         <input type="text" name="description" value="<?= htmlspecialchars($phone['description']) ?>" required>
-                        <input type="text" name="specs" value="<?= htmlspecialchars($phone['specs']) ?>" required>
+                        <input type="text" name="specs" value="<?= htmlspecialchars((string) ($phone['specs'] ?? '')) ?>" required>
                         <input type="number" step="0.01" name="price" value="<?= (float) $phone['price'] ?>" required>
                         <input type="text" name="image" value="<?= htmlspecialchars($phone['image']) ?>">
                         <button type="submit">Сохранить</button>
