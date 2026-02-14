@@ -80,6 +80,17 @@ function ensure_order_history_table(): void
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4');
 }
 
+function ensure_phone_popular_column(): bool
+{
+    $check = db()->query("SHOW COLUMNS FROM `phones` LIKE 'is_popular'");
+    if ($check && $check->fetch()) {
+        return true;
+    }
+
+    db()->exec('ALTER TABLE phones ADD COLUMN is_popular TINYINT(1) NOT NULL DEFAULT 0');
+    return true;
+}
+
 function ensure_wishlist_table(): void
 {
     db()->exec('CREATE TABLE IF NOT EXISTS wishlists (

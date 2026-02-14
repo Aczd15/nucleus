@@ -22,6 +22,7 @@ if (is_string($routeParam) && $routeParam !== '') {
 }
 
 $hasPhoneSpecs = db_has_column('phones', 'specs');
+$hasPhonePopular = ensure_phone_popular_column();
 $hasUserPhone = db_has_column('users', 'phone');
 $hasUserCity = db_has_column('users', 'city');
 $hasUserBirthDate = db_has_column('users', 'birth_date');
@@ -34,7 +35,14 @@ switch ($path) {
             ['title' => 'Бесплатная настройка устройства', 'text' => 'Перенесем данные и установим нужные приложения при покупке.'],
             ['title' => 'Расширенная гарантия Nucleus Care', 'text' => 'Дополнительная защита экрана и корпуса до 24 месяцев.'],
         ];
-        $phones = db()->query('SELECT * FROM phones ORDER BY created_at DESC LIMIT 6')->fetchAll();
+        if ($hasPhonePopular) {
+            $phones = db()->query('SELECT * FROM phones WHERE is_popular = 1 ORDER BY created_at DESC LIMIT 6')->fetchAll();
+            if (!$phones) {
+                $phones = db()->query('SELECT * FROM phones ORDER BY created_at DESC LIMIT 6')->fetchAll();
+            }
+        } else {
+            $phones = db()->query('SELECT * FROM phones ORDER BY created_at DESC LIMIT 6')->fetchAll();
+        }
         render('home/index', compact('news', 'phones'));
         break;
 
@@ -703,6 +711,7 @@ switch ($path) {
             $description = trim($_POST['description'] ?? '');
             $specs = trim($_POST['specs'] ?? '');
             $price = (float) ($_POST['price'] ?? 0);
+            $isPopular = isset($_POST['is_popular']) ? 1 : 0;
             $image = trim($_POST['image'] ?? '');
             $existingImage = trim($_POST['existing_image'] ?? '');
 
@@ -742,18 +751,30 @@ switch ($path) {
             }
 
             if ($id > 0) {
-                if ($hasPhoneSpecs) {
+                if ($hasPhoneSpecs && $hasPhonePopular) {
+                    $stmt = db()->prepare('UPDATE phones SET name=:name, description=:description, specs=:specs, price=:price, image=:image, is_popular=:isPopular WHERE id=:id');
+                    $stmt->execute(compact('id', 'name', 'description', 'specs', 'price', 'image', 'isPopular'));
+                } elseif ($hasPhoneSpecs) {
                     $stmt = db()->prepare('UPDATE phones SET name=:name, description=:description, specs=:specs, price=:price, image=:image WHERE id=:id');
                     $stmt->execute(compact('id', 'name', 'description', 'specs', 'price', 'image'));
+                } elseif ($hasPhonePopular) {
+                    $stmt = db()->prepare('UPDATE phones SET name=:name, description=:description, price=:price, image=:image, is_popular=:isPopular WHERE id=:id');
+                    $stmt->execute(compact('id', 'name', 'description', 'price', 'image', 'isPopular'));
                 } else {
                     $stmt = db()->prepare('UPDATE phones SET name=:name, description=:description, price=:price, image=:image WHERE id=:id');
                     $stmt->execute(compact('id', 'name', 'description', 'price', 'image'));
                 }
                 flash('success', 'Телефон обновлен.');
             } else {
-                if ($hasPhoneSpecs) {
+                if ($hasPhoneSpecs && $hasPhonePopular) {
+                    $stmt = db()->prepare('INSERT INTO phones (name, description, specs, price, image, is_popular) VALUES (:name, :description, :specs, :price, :image, :isPopular)');
+                    $stmt->execute(compact('name', 'description', 'specs', 'price', 'image', 'isPopular'));
+                } elseif ($hasPhoneSpecs) {
                     $stmt = db()->prepare('INSERT INTO phones (name, description, specs, price, image) VALUES (:name, :description, :specs, :price, :image)');
                     $stmt->execute(compact('name', 'description', 'specs', 'price', 'image'));
+                } elseif ($hasPhonePopular) {
+                    $stmt = db()->prepare('INSERT INTO phones (name, description, price, image, is_popular) VALUES (:name, :description, :price, :image, :isPopular)');
+                    $stmt->execute(compact('name', 'description', 'price', 'image', 'isPopular'));
                 } else {
                     $stmt = db()->prepare('INSERT INTO phones (name, description, price, image) VALUES (:name, :description, :price, :image)');
                     $stmt->execute(compact('name', 'description', 'price', 'image'));
@@ -773,7 +794,7 @@ switch ($path) {
         }
 
         $phones = db()->query('SELECT * FROM phones ORDER BY created_at DESC')->fetchAll();
-        render('admin/phones', compact('phones'));
+        render('admin/phones', compact('phones', 'hasPhonePopular'));
         break;
 
     case '/admin/users':
