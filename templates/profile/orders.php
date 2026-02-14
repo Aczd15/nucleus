@@ -11,6 +11,14 @@
                 <p>Дата: <?= htmlspecialchars($order['created_at']) ?></p>
                 <p>Сумма: <strong><?= number_format((float) $order['total_amount'], 0, '.', ' ') ?> ₽</strong></p>
 
+                <?php if (in_array((string) $order['status'], ['new', 'payment_pending'], true)): ?>
+                    <form method="post" action="<?= htmlspecialchars(url('/order/pay')) ?>" style="margin:.45rem 0; max-width:280px;">
+                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token()) ?>">
+                        <input type="hidden" name="order_id" value="<?= (int) $order['id'] ?>">
+                        <button type="submit">Оплатить заказ (демо)</button>
+                    </form>
+                <?php endif; ?>
+
                 <?php if (!in_array((string) $order['status'], ['delivered', 'cancelled'], true)): ?>
                     <form method="post" action="<?= htmlspecialchars(url('/orders/cancel')) ?>" class="cancel-order-form" onsubmit="return confirm('Отменить заказ?')">
                         <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token()) ?>">

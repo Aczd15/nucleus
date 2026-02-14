@@ -518,3 +518,12 @@ button::after {
   0% { filter: saturate(1); transform: scale(1); }
   100% { filter: saturate(1.15); transform: scale(1.03); }
 }
+
+
+.review-form {
+  max-width: 520px;
+}
+
+.review-form textarea {
+  min-height: 88px;
+}

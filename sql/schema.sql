@@ -21,6 +21,8 @@ CREATE TABLE IF NOT EXISTS phones (
     price DECIMAL(10,2) NOT NULL,
     image VARCHAR(255) DEFAULT NULL,
     is_popular TINYINT(1) NOT NULL DEFAULT 0,
+    is_sale TINYINT(1) NOT NULL DEFAULT 0,
+    old_price DECIMAL(10,2) DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -67,4 +69,16 @@ CREATE TABLE IF NOT EXISTS order_status_history (
     comment VARCHAR(255) DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     INDEX (order_id)
+);
+
+
+CREATE TABLE IF NOT EXISTS reviews (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    phone_id INT NOT NULL,
+    user_id INT NOT NULL,
+    rating TINYINT NOT NULL,
+    comment TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX (phone_id),
+    INDEX (user_id)
 );

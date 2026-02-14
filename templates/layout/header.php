@@ -16,6 +16,7 @@
         <nav class="menu-panel">
             <a class="nav-link" href="<?= htmlspecialchars(url('/catalog')) ?>">Каталог</a>
             <a class="nav-link" href="<?= htmlspecialchars(url('/about')) ?>">О компании</a>
+            <a class="nav-link" href="<?= htmlspecialchars(url('/promotions')) ?>">Акции</a>
             <a class="nav-link" href="<?= htmlspecialchars(url('/delivery-payment')) ?>">Доставка/Оплата</a>
             <a class="nav-link" href="<?= htmlspecialchars(url('/wow')) ?>">WOW Space</a>
             <a class="nav-link" href="<?= htmlspecialchars(url('/compare-lab')) ?>">Compare Lab</a>

@@ -80,6 +80,39 @@ function ensure_order_history_table(): void
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4');
 }
 
+function ensure_phone_sale_columns(): bool
+{
+    $changed = false;
+
+    $checkSale = db()->query("SHOW COLUMNS FROM `phones` LIKE 'is_sale'");
+    if (!$checkSale || !$checkSale->fetch()) {
+        db()->exec('ALTER TABLE phones ADD COLUMN is_sale TINYINT(1) NOT NULL DEFAULT 0');
+        $changed = true;
+    }
+
+    $checkOldPrice = db()->query("SHOW COLUMNS FROM `phones` LIKE 'old_price'");
+    if (!$checkOldPrice || !$checkOldPrice->fetch()) {
+        db()->exec('ALTER TABLE phones ADD COLUMN old_price DECIMAL(10,2) DEFAULT NULL');
+        $changed = true;
+    }
+
+    return true;
+}
+
+function ensure_reviews_table(): void
+{
+    db()->exec('CREATE TABLE IF NOT EXISTS reviews (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        phone_id INT NOT NULL,
+        user_id INT NOT NULL,
+        rating TINYINT NOT NULL,
+        comment TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        INDEX (phone_id),
+        INDEX (user_id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4');
+}
+
 function ensure_phone_popular_column(): bool
 {
     $check = db()->query("SHOW COLUMNS FROM `phones` LIKE 'is_popular'");

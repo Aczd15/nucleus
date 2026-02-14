@@ -23,6 +23,8 @@ if (is_string($routeParam) && $routeParam !== '') {
 
 $hasPhoneSpecs = db_has_column('phones', 'specs');
 $hasPhonePopular = ensure_phone_popular_column();
+$hasPhoneSale = ensure_phone_sale_columns();
+ensure_reviews_table();
 $hasUserPhone = db_has_column('users', 'phone');
 $hasUserCity = db_has_column('users', 'city');
 $hasUserBirthDate = db_has_column('users', 'birth_date');
@@ -49,6 +51,13 @@ switch ($path) {
 
     case '/about':
         render('home/about');
+        break;
+
+    case '/promotions':
+        $salePhones = $hasPhoneSale
+            ? db()->query('SELECT * FROM phones WHERE is_sale = 1 ORDER BY created_at DESC')->fetchAll()
+            : [];
+        render('home/promotions', compact('salePhones'));
         break;
 
     case '/delivery-payment':
@@ -370,8 +379,58 @@ switch ($path) {
             break;
         }
 
-        render('catalog/show', compact('phone'));
+        $similarStmt = db()->prepare('SELECT * FROM phones WHERE id != :id ORDER BY ABS(price - :price), created_at DESC LIMIT 4');
+        $similarStmt->execute(['id' => $id, 'price' => (float) $phone['price']]);
+        $similarPhones = $similarStmt->fetchAll();
+
+        $reviewsStmt = db()->prepare('SELECT r.rating, r.comment, r.created_at, u.name AS user_name FROM reviews r JOIN users u ON u.id = r.user_id WHERE r.phone_id = :phone_id ORDER BY r.created_at DESC');
+        $reviewsStmt->execute(['phone_id' => $id]);
+        $reviews = $reviewsStmt->fetchAll();
+
+        $ratingStmt = db()->prepare('SELECT COALESCE(AVG(rating),0) AS avg_rating, COUNT(*) AS total_reviews FROM reviews WHERE phone_id = :phone_id');
+        $ratingStmt->execute(['phone_id' => $id]);
+        $rating = $ratingStmt->fetch();
+
+        render('catalog/show', compact('phone', 'similarPhones', 'reviews', 'rating'));
         break;
+
+    case '/product/review':
+        if (!current_user()) {
+            flash('error', 'Сначала войдите в аккаунт.');
+            redirect('/login');
+        }
+
+        if ($method !== 'POST' || !verify_csrf()) {
+            flash('error', 'Невалидный запрос.');
+            redirect('/catalog');
+        }
+
+        $phoneId = (int) ($_POST['phone_id'] ?? 0);
+        $ratingValue = max(1, min(5, (int) ($_POST['rating'] ?? 0)));
+        $comment = trim((string) ($_POST['comment'] ?? ''));
+
+        if ($comment === '') {
+            flash('error', 'Напишите отзыв.');
+            redirect(url_with_query('/product', ['id' => $phoneId]));
+        }
+
+        $phoneExists = db()->prepare('SELECT id FROM phones WHERE id = :id');
+        $phoneExists->execute(['id' => $phoneId]);
+        if (!$phoneExists->fetch()) {
+            flash('error', 'Товар не найден.');
+            redirect('/catalog');
+        }
+
+        $insReview = db()->prepare('INSERT INTO reviews (phone_id, user_id, rating, comment) VALUES (:phone_id, :user_id, :rating, :comment)');
+        $insReview->execute([
+            'phone_id' => $phoneId,
+            'user_id' => (int) current_user()['id'],
+            'rating' => $ratingValue,
+            'comment' => $comment,
+        ]);
+
+        flash('success', 'Спасибо за отзыв!');
+        redirect(url_with_query('/product', ['id' => $phoneId]));
 
     case '/wishlist':
         if (!current_user()) {
@@ -515,7 +574,7 @@ switch ($path) {
             $stmt->execute([
                 'user_id' => (int) current_user()['id'],
                 'total_amount' => $total,
-                'status' => 'new',
+                'status' => 'payment_pending',
             ]);
 
             $orderId = (int) $pdo->lastInsertId();
@@ -533,7 +592,7 @@ switch ($path) {
             $histStmt = $pdo->prepare('INSERT INTO order_status_history (order_id, status, comment) VALUES (:order_id, :status, :comment)');
             $histStmt->execute([
                 'order_id' => $orderId,
-                'status' => 'new',
+                'status' => 'payment_pending',
                 'comment' => 'Заказ создан пользователем',
             ]);
 
@@ -548,6 +607,44 @@ switch ($path) {
 
         unset($_SESSION['cart']);
         flash('success', 'Заказ успешно оформлен.');
+        redirect('/orders');
+
+    case '/order/pay':
+        if (!current_user()) {
+            flash('error', 'Сначала войдите в аккаунт.');
+            redirect('/login');
+        }
+
+        if ($method !== 'POST' || !verify_csrf()) {
+            flash('error', 'Невалидный запрос.');
+            redirect('/orders');
+        }
+
+        ensure_orders_tables();
+        ensure_order_history_table();
+
+        $orderId = (int) ($_POST['order_id'] ?? 0);
+
+        $orderStmt = db()->prepare('SELECT id, status FROM orders WHERE id = :id AND user_id = :user_id');
+        $orderStmt->execute(['id' => $orderId, 'user_id' => (int) current_user()['id']]);
+        $order = $orderStmt->fetch();
+        if (!$order) {
+            flash('error', 'Заказ не найден.');
+            redirect('/orders');
+        }
+
+        if (!in_array((string) $order['status'], ['new', 'payment_pending'], true)) {
+            flash('error', 'Этот заказ нельзя оплатить.');
+            redirect('/orders');
+        }
+
+        $upd = db()->prepare('UPDATE orders SET status = :status WHERE id = :id');
+        $upd->execute(['status' => 'paid', 'id' => $orderId]);
+
+        $hist = db()->prepare('INSERT INTO order_status_history (order_id, status, comment) VALUES (:order_id, :status, :comment)');
+        $hist->execute(['order_id' => $orderId, 'status' => 'paid', 'comment' => 'Оплата подтверждена (демо)']);
+
+        flash('success', 'Оплата прошла успешно.');
         redirect('/orders');
 
     case '/orders/cancel':
@@ -651,7 +748,7 @@ switch ($path) {
         ensure_orders_tables();
         ensure_order_history_table();
 
-        $allowedStatuses = ['new', 'paid', 'shipped', 'delivered', 'cancelled'];
+        $allowedStatuses = ['new', 'payment_pending', 'paid', 'shipped', 'delivered', 'cancelled'];
 
         if ($method === 'POST') {
             if (!verify_csrf()) {
@@ -750,35 +847,42 @@ switch ($path) {
                 $image = uploads_base_url() . '/' . $fileName;
             }
 
+            $isSale = isset($_POST['is_sale']) ? 1 : 0;
+            $oldPrice = isset($_POST['old_price']) && $_POST['old_price'] !== '' ? (float) $_POST['old_price'] : null;
+
+            $fields = [
+                'name' => $name,
+                'description' => $description,
+                'price' => $price,
+                'image' => $image,
+            ];
+            if ($hasPhoneSpecs) {
+                $fields['specs'] = $specs;
+            }
+            if ($hasPhonePopular) {
+                $fields['is_popular'] = $isPopular;
+            }
+            if ($hasPhoneSale) {
+                $fields['is_sale'] = $isSale;
+                $fields['old_price'] = $isSale ? ($oldPrice ?: max($price, 0.0)) : null;
+            }
+
             if ($id > 0) {
-                if ($hasPhoneSpecs && $hasPhonePopular) {
-                    $stmt = db()->prepare('UPDATE phones SET name=:name, description=:description, specs=:specs, price=:price, image=:image, is_popular=:isPopular WHERE id=:id');
-                    $stmt->execute(compact('id', 'name', 'description', 'specs', 'price', 'image', 'isPopular'));
-                } elseif ($hasPhoneSpecs) {
-                    $stmt = db()->prepare('UPDATE phones SET name=:name, description=:description, specs=:specs, price=:price, image=:image WHERE id=:id');
-                    $stmt->execute(compact('id', 'name', 'description', 'specs', 'price', 'image'));
-                } elseif ($hasPhonePopular) {
-                    $stmt = db()->prepare('UPDATE phones SET name=:name, description=:description, price=:price, image=:image, is_popular=:isPopular WHERE id=:id');
-                    $stmt->execute(compact('id', 'name', 'description', 'price', 'image', 'isPopular'));
-                } else {
-                    $stmt = db()->prepare('UPDATE phones SET name=:name, description=:description, price=:price, image=:image WHERE id=:id');
-                    $stmt->execute(compact('id', 'name', 'description', 'price', 'image'));
+                $set = [];
+                foreach (array_keys($fields) as $col) {
+                    $set[] = $col . '=:' . $col;
                 }
+                $sql = 'UPDATE phones SET ' . implode(', ', $set) . ' WHERE id=:id';
+                $stmt = db()->prepare($sql);
+                $fields['id'] = $id;
+                $stmt->execute($fields);
                 flash('success', 'Телефон обновлен.');
             } else {
-                if ($hasPhoneSpecs && $hasPhonePopular) {
-                    $stmt = db()->prepare('INSERT INTO phones (name, description, specs, price, image, is_popular) VALUES (:name, :description, :specs, :price, :image, :isPopular)');
-                    $stmt->execute(compact('name', 'description', 'specs', 'price', 'image', 'isPopular'));
-                } elseif ($hasPhoneSpecs) {
-                    $stmt = db()->prepare('INSERT INTO phones (name, description, specs, price, image) VALUES (:name, :description, :specs, :price, :image)');
-                    $stmt->execute(compact('name', 'description', 'specs', 'price', 'image'));
-                } elseif ($hasPhonePopular) {
-                    $stmt = db()->prepare('INSERT INTO phones (name, description, price, image, is_popular) VALUES (:name, :description, :price, :image, :isPopular)');
-                    $stmt->execute(compact('name', 'description', 'price', 'image', 'isPopular'));
-                } else {
-                    $stmt = db()->prepare('INSERT INTO phones (name, description, price, image) VALUES (:name, :description, :price, :image)');
-                    $stmt->execute(compact('name', 'description', 'price', 'image'));
-                }
+                $columns = implode(', ', array_keys($fields));
+                $placeholders = ':' . implode(', :', array_keys($fields));
+                $sql = 'INSERT INTO phones (' . $columns . ') VALUES (' . $placeholders . ')';
+                $stmt = db()->prepare($sql);
+                $stmt->execute($fields);
                 flash('success', 'Телефон добавлен.');
             }
 
@@ -794,7 +898,7 @@ switch ($path) {
         }
 
         $phones = db()->query('SELECT * FROM phones ORDER BY created_at DESC')->fetchAll();
-        render('admin/phones', compact('phones', 'hasPhonePopular'));
+        render('admin/phones', compact('phones', 'hasPhonePopular', 'hasPhoneSale'));
         break;
 
     case '/admin/users':
