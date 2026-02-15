@@ -82,3 +82,11 @@ CREATE TABLE IF NOT EXISTS reviews (
     INDEX (phone_id),
     INDEX (user_id)
 );
+
+
+CREATE TABLE IF NOT EXISTS news (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(200) NOT NULL,
+    text TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

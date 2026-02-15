@@ -25,6 +25,7 @@ $hasPhoneSpecs = db_has_column('phones', 'specs');
 $hasPhonePopular = ensure_phone_popular_column();
 $hasPhoneSale = ensure_phone_sale_columns();
 ensure_reviews_table();
+ensure_news_table();
 $hasUserPhone = db_has_column('users', 'phone');
 $hasUserCity = db_has_column('users', 'city');
 $hasUserBirthDate = db_has_column('users', 'birth_date');
@@ -32,11 +33,14 @@ $hasUserBirthDate = db_has_column('users', 'birth_date');
 switch ($path) {
     case '/':
     case '/index.php':
-        $news = [
-            ['title' => 'Новая поставка iPhone 16 Pro Max', 'text' => 'В наличии все актуальные цвета и объемы памяти.'],
-            ['title' => 'Бесплатная настройка устройства', 'text' => 'Перенесем данные и установим нужные приложения при покупке.'],
-            ['title' => 'Расширенная гарантия Nucleus Care', 'text' => 'Дополнительная защита экрана и корпуса до 24 месяцев.'],
-        ];
+        $news = db()->query('SELECT title, text FROM news ORDER BY created_at DESC LIMIT 6')->fetchAll();
+        if (!$news) {
+            $news = [
+                ['title' => 'Новая поставка iPhone 16 Pro Max', 'text' => 'В наличии все актуальные цвета и объемы памяти.'],
+                ['title' => 'Бесплатная настройка устройства', 'text' => 'Перенесем данные и установим нужные приложения при покупке.'],
+                ['title' => 'Расширенная гарантия Nucleus Care', 'text' => 'Дополнительная защита экрана и корпуса до 24 месяцев.'],
+            ];
+        }
         if ($hasPhonePopular) {
             $phones = db()->query('SELECT * FROM phones WHERE is_popular = 1 ORDER BY created_at DESC LIMIT 6')->fetchAll();
             if (!$phones) {
@@ -610,93 +614,11 @@ switch ($path) {
         redirect('/orders');
 
     case '/order/pay':
-        if (!current_user()) {
-            flash('error', 'Сначала войдите в аккаунт.');
-            redirect('/login');
-        }
-
-        if ($method !== 'POST' || !verify_csrf()) {
-            flash('error', 'Невалидный запрос.');
-            redirect('/orders');
-        }
-
-        ensure_orders_tables();
-        ensure_order_history_table();
-
-        $orderId = (int) ($_POST['order_id'] ?? 0);
-
-        $orderStmt = db()->prepare('SELECT id, status FROM orders WHERE id = :id AND user_id = :user_id');
-        $orderStmt->execute(['id' => $orderId, 'user_id' => (int) current_user()['id']]);
-        $order = $orderStmt->fetch();
-        if (!$order) {
-            flash('error', 'Заказ не найден.');
-            redirect('/orders');
-        }
-
-        if (!in_array((string) $order['status'], ['new', 'payment_pending'], true)) {
-            flash('error', 'Этот заказ нельзя оплатить.');
-            redirect('/orders');
-        }
-
-        $upd = db()->prepare('UPDATE orders SET status = :status WHERE id = :id');
-        $upd->execute(['status' => 'paid', 'id' => $orderId]);
-
-        $hist = db()->prepare('INSERT INTO order_status_history (order_id, status, comment) VALUES (:order_id, :status, :comment)');
-        $hist->execute(['order_id' => $orderId, 'status' => 'paid', 'comment' => 'Оплата подтверждена (демо)']);
-
-        flash('success', 'Оплата прошла успешно.');
+        flash('error', 'Оплату заказа может подтвердить только администратор.');
         redirect('/orders');
 
     case '/orders/cancel':
-        if (!current_user()) {
-            flash('error', 'Сначала войдите в аккаунт.');
-            redirect('/login');
-        }
-
-        if ($method !== 'POST' || !verify_csrf()) {
-            flash('error', 'Невалидный запрос.');
-            redirect('/orders');
-        }
-
-        ensure_orders_tables();
-        ensure_order_history_table();
-
-        $orderId = (int) ($_POST['order_id'] ?? 0);
-        $reason = trim((string) ($_POST['reason'] ?? ''));
-
-        if ($reason === '') {
-            flash('error', 'Укажите причину отмены заказа.');
-            redirect('/orders');
-        }
-
-        $orderStmt = db()->prepare('SELECT id, status FROM orders WHERE id = :id AND user_id = :user_id');
-        $orderStmt->execute([
-            'id' => $orderId,
-            'user_id' => (int) current_user()['id'],
-        ]);
-        $order = $orderStmt->fetch();
-
-        if (!$order) {
-            flash('error', 'Заказ не найден.');
-            redirect('/orders');
-        }
-
-        if (in_array((string) $order['status'], ['delivered', 'cancelled'], true)) {
-            flash('error', 'Этот заказ уже нельзя отменить.');
-            redirect('/orders');
-        }
-
-        $upd = db()->prepare('UPDATE orders SET status = :status WHERE id = :id');
-        $upd->execute(['status' => 'cancelled', 'id' => $orderId]);
-
-        $hist = db()->prepare('INSERT INTO order_status_history (order_id, status, comment) VALUES (:order_id, :status, :comment)');
-        $hist->execute([
-            'order_id' => $orderId,
-            'status' => 'cancelled',
-            'comment' => 'Отмена пользователем: ' . $reason,
-        ]);
-
-        flash('success', 'Заказ отменен.');
+        flash('error', 'Отмену заказа выполняет только администратор.');
         redirect('/orders');
 
     case '/orders':
@@ -736,7 +658,53 @@ switch ($path) {
         $usersCount = (int) db()->query('SELECT COUNT(*) FROM users')->fetchColumn();
         $phonesCount = (int) db()->query('SELECT COUNT(*) FROM phones')->fetchColumn();
         $ordersCount = (int) db()->query('SELECT COUNT(*) FROM orders')->fetchColumn();
-        render('admin/dashboard', compact('usersCount', 'phonesCount', 'ordersCount'));
+        $newsCount = (int) db()->query('SELECT COUNT(*) FROM news')->fetchColumn();
+        render('admin/dashboard', compact('usersCount', 'phonesCount', 'ordersCount', 'newsCount'));
+        break;
+
+    case '/admin/news':
+        if (!is_admin()) {
+            flash('error', 'Доступ запрещен.');
+            redirect('/');
+        }
+
+        if ($method === 'POST') {
+            if (!verify_csrf()) {
+                flash('error', 'Невалидный CSRF токен.');
+                redirect('/admin/news');
+            }
+
+            $id = (int) ($_POST['id'] ?? 0);
+            $title = trim((string) ($_POST['title'] ?? ''));
+            $text = trim((string) ($_POST['text'] ?? ''));
+
+            if ($title === '' || $text === '') {
+                flash('error', 'Заполните заголовок и текст новости.');
+                redirect('/admin/news');
+            }
+
+            if ($id > 0) {
+                $stmt = db()->prepare('UPDATE news SET title = :title, text = :text WHERE id = :id');
+                $stmt->execute(['id' => $id, 'title' => $title, 'text' => $text]);
+                flash('success', 'Новость обновлена.');
+            } else {
+                $stmt = db()->prepare('INSERT INTO news (title, text) VALUES (:title, :text)');
+                $stmt->execute(['title' => $title, 'text' => $text]);
+                flash('success', 'Новость добавлена.');
+            }
+            redirect('/admin/news');
+        }
+
+        if (isset($_GET['delete'])) {
+            $id = (int) $_GET['delete'];
+            $stmt = db()->prepare('DELETE FROM news WHERE id = :id');
+            $stmt->execute(['id' => $id]);
+            flash('success', 'Новость удалена.');
+            redirect('/admin/news');
+        }
+
+        $newsItems = db()->query('SELECT * FROM news ORDER BY created_at DESC')->fetchAll();
+        render('admin/news', compact('newsItems'));
         break;
 
     case '/admin/orders':

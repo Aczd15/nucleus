@@ -16,5 +16,10 @@
             <p><?= (int) $ordersCount ?></p>
             <a href="<?= htmlspecialchars(url('/admin/orders')) ?>">Управлять</a>
         </article>
+        <article class="card">
+            <h3>Новости</h3>
+            <p><?= (int) $newsCount ?></p>
+            <a href="<?= htmlspecialchars(url('/admin/news')) ?>">Управлять</a>
+        </article>
     </div>
 </section>

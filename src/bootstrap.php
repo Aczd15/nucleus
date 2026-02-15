@@ -80,6 +80,17 @@ function ensure_order_history_table(): void
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4');
 }
 
+
+function ensure_news_table(): void
+{
+    db()->exec('CREATE TABLE IF NOT EXISTS news (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        title VARCHAR(200) NOT NULL,
+        text TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4');
+}
+
 function ensure_phone_sale_columns(): bool
 {
     $changed = false;
