@@ -1,0 +1,13 @@
+RewriteEngine On
+
+# If project is opened from repo root in Apache (e.g. http://localhost/nucleus)
+# serve static assets from /public/assets
+RewriteRule ^assets/(.*)$ public/assets/$1 [L,NC]
+
+# Root path should open the app entrypoint
+RewriteRule ^$ public/index.php [L]
+
+# Route all non-file/non-directory requests to front controller
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ public/index.php [L]
